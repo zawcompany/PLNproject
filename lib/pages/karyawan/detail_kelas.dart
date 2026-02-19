@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/item_model.dart';
 import '../../models/room_model.dart';
-import '../../data/exsistingdata.dart';
 import '../../data/booking_data.dart';
 
 bool isRoomUsed(RoomModel room) {
@@ -23,6 +22,78 @@ class DetailKelasPage extends StatefulWidget {
 }
 
 class _DetailKelasPageState extends State<DetailKelasPage> {
+void _showComplaintDialog(RoomModel room) {
+  List<String> commonIssues = ["Lampu Mati", "AC Tidak Dingin", "Kursi Rusak", "Kebersihan"];
+  List<String> selectedIssues = [];
+  TextEditingController otherIssueController = TextEditingController();
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder( 
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text("Pengaduan - ${room.name}"),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ...commonIssues.map((issue) => CheckboxListTile(
+                        title: Text(issue),
+                        value: selectedIssues.contains(issue),
+                        onChanged: (bool? value) {
+                          setDialogState(() {
+                            if (value == true) {
+                              selectedIssues.add(issue);
+                            } else {
+                              selectedIssues.remove(issue);
+                            }
+                          });
+                        },
+                      )),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: otherIssueController,
+                    decoration: const InputDecoration(
+                      labelText: "Aduan Lainnya",
+                      hintText: "Ketik aduan Anda di sini...",
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Batal"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  print("Aduan Terpilih: $selectedIssues");
+                  print("Aduan Lainnya: ${otherIssueController.text}");
+                  
+                  setState(() {
+                    room.condition = RoomCondition.perluPerbaikan;
+                  });
+
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Pengaduan berhasil dikirim")),
+                  );
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008996)),
+                child: const Text("Kirim", style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
   int selectedTab = 0;
   late List<RoomModel> rooms;
 
