@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'login_page.dart';
+import 'karyawan/kdash_wisma.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -129,7 +130,12 @@ class _RegisterPageState extends State<RegisterPage> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const DashboardPage()),
+                          );
+                        },
                         child: const Text(
                           "Daftar",
                           style: TextStyle(
