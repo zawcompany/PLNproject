@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'tambah_wisma.dart';
 import 'detail_kelas.dart';
 import '../../models/item_model.dart';
 import 'package:monitoring_app/widgets/navbar.dart';
@@ -32,23 +31,6 @@ class _DashboardPageState extends State<DashboardPage> {
     ItemModel(title: "Kelas Toddopuli", imagePath: "lib/assets/images/kelas_toddopuli.jpg", type: ItemType.kelas),
     ItemModel(title: "Aula", imagePath: "lib/assets/images/aula.jpg", type: ItemType.kelas),
   ];
-
-  void _showAddWismaDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return AddWismaPopUp(
-          type: selectedMenu,
-          onSave: (ItemModel newItem) {
-            setState(() {
-              items.add(newItem);
-            });
-          },
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +85,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
               const SizedBox(height: 20),
+              // Header Card
               SizedBox(
                 height: 180,
                 child: Stack(
@@ -186,24 +169,22 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
               const SizedBox(height: 25),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    selectedMenu == ItemType.wisma ? "Jenis Wisma" : "Jenis Kelas",
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: primaryTeal),
-                  ),
-                  GestureDetector(
-                    onTap: _showAddWismaDialog,
-                    child: const CircleAvatar(
-                      radius: 14,
-                      backgroundColor: Color(0xFFE8F1F3),
-                      child: Icon(Icons.add, size: 18, color: primaryTeal),
-                    ),
-                  )
-                ],
+
+              // --- PEMBATAS / DIVIDER ---
+              const Divider(
+                color: Colors.black12,
+                thickness: 1,
               ),
               const SizedBox(height: 15),
+
+              // Bagian Judul
+              Text(
+                selectedMenu == ItemType.wisma ? "Jenis Wisma" : "Jenis Kelas",
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: primaryTeal),
+              ),
+              const SizedBox(height: 15),
+              
+              // Grid View
               Expanded(
                 child: GridView.builder(
                   itemCount: filteredItems.length,
@@ -224,7 +205,6 @@ class _DashboardPageState extends State<DashboardPage> {
                           MaterialPageRoute(builder: (_) => DetailKelasPage(item: item)),
                         );
 
-                        // GUARD: Cek mounted sebelum menggunakan context atau setState setelah async
                         if (!mounted) return;
 
                         if (result == true) {
