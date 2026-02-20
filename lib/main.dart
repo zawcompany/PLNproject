@@ -9,6 +9,7 @@ import 'pages/karyawan/kdash_wisma.dart';
 import 'pages/profil_page.dart';
 import 'pages/karyawan/riwayat_page.dart';
 import 'pages/approval/approval_dash.dart';
+import 'pages/approval/riwayat_approval.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,9 +39,10 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
-        '/kdash_wisma': (context) => const DashboardPage(),
-        '/dash_approval': (context) => DashApproval(),
-        '/riwayat': (context) => const RiwayatPage(),
+        '/kdash_wisma': (context) => const DashboardPage(), // Dashboard Karyawan
+        '/dash_approval': (context) => DashApproval(),      // Dashboard Approval
+        '/riwayat': (context) => const RiwayatPage(),       // Riwayat Karyawan
+        '/riwayat_approval': (context) => const RiwayatApprovalPage(), // Tambahkan ini jika belum ada
         '/profil': (context) => const ProfileScreen(),
       },
     );

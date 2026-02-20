@@ -1,173 +1,208 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:monitoring_app/widgets/navbar.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart'; // Tambahkan package url_launcher
+import '../widgets/navbar.dart';
 
-class ProfileScreen extends StatelessWidget {
+
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
-  final Color primaryColor = const Color(0xFF008996);
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
 
-  Future<void> _launchYouTube() async {
-    final Uri url = Uri.parse('https://www.youtube.com/watch?v=link_video_tutorial_anda');
+class _ProfileScreenState extends State<ProfileScreen> {
+  final Color primaryColor = const Color(0xFF008996);
+  String name = "User";
+  String email = "useruser@gmail.com";
+  String role = "";
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        if (doc.exists) {
+          final data = doc.data();
+          setState(() {
+            name = data?['name'] ?? name;
+            email = data?['email'] ?? email;
+            role = (data?['role'] ?? "").toString().toLowerCase().trim();
+          });
+        }
+      } catch (e) {
+        debugPrint("Error loading user data: $e");
+      } finally {
+        setState(() => isLoading = false);
+      }
+    }
+  }
+
+  // Fungsi untuk membuka YouTube
+  Future<void> _launchTutorial() async {
+    final Uri url = Uri.parse('https://www.youtube.com/watch?v=your_video_id'); // Ganti dengan link Anda
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch $url');
     }
   }
 
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          title: const Text("Konfirmasi Keluar", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          content: const Text("Apakah Anda yakin ingin keluar dari aplikasi?", style: TextStyle(fontSize: 14)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Batal", style: TextStyle(color: Colors.grey, fontSize: 14)),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, '/login');
-              },
-              child: const Text("Keluar", style: TextStyle(color: Colors.red, fontSize: 14)),
-            ),
-          ],
-        );
-      },
-    );
+  Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+  }
+
+  // LOGIKA RUTE DINAMIS BERDASARKAN ROLE
+  void _handleNavigation(int index) {
+    if (index == 0) {
+      Navigator.pushReplacementNamed(
+        context, 
+        role == 'approval' ? '/approval' : '/kdash_wisma'
+      );
+    } else if (index == 1) {
+      Navigator.pushReplacementNamed(
+        context, 
+        role == 'approval' ? '/riwayat_approval' : '/riwayat' 
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 12),
-            _buildUserInfo(),
-            const SizedBox(height: 30),
-            _buildMenuButtons(context),
-          ],
-        ),
-      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 15),
+                  _buildUserInfo(),
+                  const SizedBox(height: 30),
+                  _buildMenuButtons(),
+                ],
+              ),
+            ),
       bottomNavigationBar: CustomBottomNav(
         currentIndex: 2,
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/kdash_wisma');
-          } else if (index == 1) {
-            Navigator.pushReplacementNamed(context, '/riwayat');
-          }
-        },
+        onTap: _handleNavigation,
       ),
     );
   }
 
   Widget _buildHeader() {
-    return Stack(
-      alignment: Alignment.bottomCenter,
-      clipBehavior: Clip.none,
-      children: [
-        SizedBox(
-          width: double.infinity,
-          height: 220,
-          child: SvgPicture.asset(
-            'lib/assets/images/header_riwayat.svg',
-            fit: BoxFit.cover,
-          ),
-        ),
-        Positioned(
-          bottom: -50,
-          child: CircleAvatar(
-            radius: 65,
-            backgroundColor: Colors.white,
-            child: CircleAvatar(
-              radius: 60,
-              backgroundColor: primaryColor,
-              child: const Icon(Icons.person, size: 60, color: Colors.white),
-            ),
-          ),
-        ),
-      ],
+    return SizedBox(
+      width: double.infinity,
+      height: 220, // Disamakan ukurannya dengan RiwayatPage (220)
+      child: SvgPicture.asset(
+        'lib/assets/images/header_riwayat.svg',
+        fit: BoxFit.cover,
+      ),
     );
   }
 
   Widget _buildUserInfo() {
     return Column(
-      children: const [
-        SizedBox(height: 55),
-        Text(
-          'User',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      children: [
+        const CircleAvatar(
+          radius: 40,
+          backgroundColor: Color(0xFFE0E6E6),
+          child: Icon(Icons.person, size: 50, color: Colors.white),
         ),
+        const SizedBox(height: 15),
         Text(
-          'useruser@gmail.com',
-          style: TextStyle(color: Colors.grey, fontSize: 13),
+          name, 
+          style: TextStyle(
+            fontSize: 18, 
+            fontWeight: FontWeight.bold, 
+            color: primaryColor
+          )
         ),
+        Text(email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
       ],
     );
   }
-
-  Widget _buildMenuButtons(BuildContext context) {
+  Widget _buildMenuButtons() {
     return Column(
       children: [
-        _menuItem(
-          Icons.edit_outlined,
-          'Edit profil',
-          onTap: () {
-            showDialog(
-              context: context,
-              builder: (context) => const DialogEditProfil(),
-            );
-          },
+        _menuItem(Icons.edit_outlined, "Edit Profil", onTap: () async {
+          final result = await showDialog(
+            context: context,
+            builder: (context) => const DialogEditProfil(),
+          );
+
+          if (result == true) {
+            _loadUserData(); 
+          }
+        }),
+        _menuItem(Icons.play_circle_outline, "Tutorial Penggunaan Aplikasi", onTap: _launchTutorial),
+        
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Divider(color: Color(0xFFF0F4F4)),
         ),
-        _menuItem(
-          Icons.play_circle_outline,
-          'Tutorial Penggunaan Aplikasi',
-          onTap: _launchYouTube,
-        ),
-        _menuItem(
-          Icons.logout,
-          'Keluar',
-          isLogout: true,
-          onTap: () => _showLogoutDialog(context),
-        ),
+        _menuItem(Icons.logout_rounded, "Keluar", isLogout: true, onTap: () {
+          _showLogoutConfirm();
+        }),
       ],
     );
   }
 
-  Widget _menuItem(IconData icon, String title,
-      {required VoidCallback onTap, bool isLogout = false}) {
+  void _showLogoutConfirm() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Konfirmasi"),
+        content: const Text("Yakin ingin keluar?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _logout();
+            },
+            child: const Text("Keluar", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _menuItem(IconData icon, String title, {required VoidCallback onTap, bool isLogout = false}) {
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: isLogout ? const Color(0xFFE0F2F3) : Colors.transparent,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade200, width: 0.5),
-          top: isLogout ? BorderSide(color: Colors.grey.shade200, width: 0.5) : BorderSide.none,
-        ),
+        color: isLogout ? const Color(0xFFFFEBEE) : const Color(0xFFF8FBFB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF0F4F4)),
       ),
       child: ListTile(
-        leading: Icon(icon, size: 22, color: isLogout ? const Color(0xFF008996) : Colors.black87),
-        title: Text(title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: isLogout ? const Color(0xFF008996) : Colors.black87,
-            )),
+        leading: Icon(icon, color: isLogout ? Colors.red : primaryColor),
+        title: Text(title, style: TextStyle(color: isLogout ? Colors.red : Colors.black87, fontWeight: FontWeight.w500, fontSize: 14)),
         trailing: const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
         onTap: onTap,
       ),
     );
   }
 }
+
+// --- BAGIAN DIALOG EDIT PROFIL ---
 
 class DialogEditProfil extends StatefulWidget {
   const DialogEditProfil({super.key});
@@ -178,23 +213,27 @@ class DialogEditProfil extends StatefulWidget {
 
 class _DialogEditProfilState extends State<DialogEditProfil> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController(text: "User");
-  final TextEditingController _emailController = TextEditingController(text: "useruser@gmail.com");
+  late TextEditingController _nameController;
+  late TextEditingController _emailController;
   final TextEditingController _oldPwController = TextEditingController();
   final TextEditingController _newPwController = TextEditingController();
-  final TextEditingController _confirmPwController = TextEditingController();
 
   File? _image;
-  final picker = ImagePicker();
   bool _isObscureNew = true;
   bool _isObscureOld = true;
 
+  @override
+  void initState() {
+    super.initState();
+    final user = FirebaseAuth.instance.currentUser;
+    _nameController = TextEditingController(text: user?.displayName ?? "");
+    _emailController = TextEditingController(text: user?.email ?? "");
+  }
+
   Future<void> _getImage() async {
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
+      setState(() => _image = File(pickedFile.path));
     }
   }
 
@@ -202,10 +241,8 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: Colors.white,
       child: Container(
-        padding: const EdgeInsets.all(24),
-        width: MediaQuery.of(context).size.width * 0.95,
+        padding: const EdgeInsets.all(20),
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,
@@ -215,91 +252,57 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      "Edit Profil",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF008996)),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, color: Colors.grey, size: 20),
-                    )
+                    const Text("Edit Profil", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF008996))),
+                    IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
                   ],
                 ),
+                _buildAvatarPicker(),
+                const SizedBox(height: 20),
+                _buildTextField(_nameController, "Nama Baru", Icons.person_outline),
                 const SizedBox(height: 10),
-                
-                // Fitur Edit Foto Profil
-                Center(
-                  child: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 45,
-                        backgroundColor: const Color(0xFFE0E6E6),
-                        backgroundImage: _image != null ? FileImage(_image!) : null,
-                        child: _image == null 
-                          ? const Icon(Icons.person, size: 45, color: Colors.white) 
-                          : null,
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: _getImage,
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF008996),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
-                          ),
-                        ),
-                      ),
-                    ],
+                _buildTextField(_emailController, "Email Baru", Icons.email_outlined),
+                const Divider(height: 40),
+                _buildTextField(_newPwController, "Password Baru (Opsional)", Icons.lock_open, isPassword: true, isNew: true),
+                const SizedBox(height: 10),
+                _buildTextField(_oldPwController, "Password Lama (Konfirmasi)", Icons.lock, isPassword: true, isNew: false),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF008996),
+                    minimumSize: const Size(double.infinity, 45),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                ),
-                const SizedBox(height: 25),
+                  // Di dalam class _DialogEditProfilState, pada bagian onPressed tombol Simpan:
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate()) {
+                      try {
+                        final user = FirebaseAuth.instance.currentUser;
+                        if (user != null) {
+                          // 1. Update di Firestore
+                          await FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(user.uid)
+                              .update({
+                            'name': _nameController.text,
+                            'email': _emailController.text,
+                          });
 
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildLabel("Data Diri"),
-                    _buildTextField(_nameController, "Nama Baru", Icons.person_outline),
-                    const SizedBox(height: 12),
-                    _buildTextField(_emailController, "Email Baru", Icons.email_outlined),
-                    
-                    const SizedBox(height: 20),
-                    _buildLabel("Ganti Password (Opsional)"),
-                    _buildTextField(_newPwController, "Password Baru", Icons.lock_open_outlined, isPassword: true, isNew: true),
-                    const SizedBox(height: 12),
-                    _buildTextField(_confirmPwController, "Konfirmasi Password Baru", Icons.check_circle_outline, isPassword: true, isNew: true),
-                    
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 15),
-                      child: Divider(color: Colors.black12),
-                    ),
-                    
-                    _buildLabel("Konfirmasi Perubahan"),
-                    _buildTextField(_oldPwController, "Masukkan Password Lama", Icons.lock_outline, isPassword: true, isNew: false),
-                  ],
-                ),
-                
-                const SizedBox(height: 30),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF008996),
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        Navigator.pop(context);
+                          // 2. (Opsional) Update display name di Firebase Auth
+                          await user.updateDisplayName(_nameController.text);
+
+                          if (!mounted) return;
+                          Navigator.pop(context, true); // Kirim 'true' sebagai tanda data berubah
+                          
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Profil berhasil diperbarui!")),
+                          );
+                        }
+                      } catch (e) {
+                        debugPrint("Gagal update profil: $e");
                       }
-                    },
-                    child: const Text("Simpan Perubahan", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                  ),
+                    }
+                  },
+                  child: const Text("Simpan", style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),
@@ -309,13 +312,27 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
     );
   }
 
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8, left: 2),
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey),
-      ),
+  Widget _buildAvatarPicker() {
+    return Stack(
+      children: [
+        CircleAvatar(
+          radius: 40,
+          backgroundImage: _image != null ? FileImage(_image!) : null,
+          child: _image == null ? const Icon(Icons.person, size: 40) : null,
+        ),
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: InkWell(
+            onTap: _getImage,
+            child: const CircleAvatar(
+              radius: 15,
+              backgroundColor: Color(0xFF008996),
+              child: Icon(Icons.camera_alt, size: 15, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -323,55 +340,24 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
     return TextFormField(
       controller: controller,
       obscureText: isPassword ? (isNew ? _isObscureNew : _isObscureOld) : false,
-      style: const TextStyle(fontSize: 13),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(fontSize: 12, color: Colors.grey),
-        prefixIcon: Icon(icon, size: 18, color: const Color(0xFF008996)),
-        filled: true,
-        fillColor: const Color(0xFFF8FBFB),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E6E6)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF008996), width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color.fromRGBO(249, 58, 58, 0.711)),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color.fromRGBO(249, 58, 58, 0.711), width: 1.5),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        prefixIcon: Icon(icon, color: const Color(0xFF008996)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         suffixIcon: isPassword
             ? IconButton(
-                icon: Icon(
-                  (isNew ? _isObscureNew : _isObscureOld) ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                  size: 18,
-                  color: Colors.grey,
-                ),
-                onPressed: () {
-                  setState(() {
-                    if (isNew) {
-                      _isObscureNew = !_isObscureNew;
-                    } else {
-                      _isObscureOld = !_isObscureOld;
-                    }
-                  });
-                },
+                icon: Icon((isNew ? _isObscureNew : _isObscureOld) ? Icons.visibility_off : Icons.visibility),
+                onPressed: () => setState(() {
+                  if (isNew) {
+                    _isObscureNew = !_isObscureNew;
+                  } else {
+                    _isObscureOld = !_isObscureOld;
+                  }
+                }),
               )
             : null,
       ),
-      validator: (value) {
-        if (label == "Masukkan Password Lama" && (value == null || value.isEmpty)) {
-          return "Wajib diisi";
-        }
-        return null;
-      },
+      validator: (val) => (label.contains("Lama") && (val == null || val.isEmpty)) ? "Wajib diisi" : null,
     );
   }
 }
