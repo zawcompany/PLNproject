@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'tambah_wisma.dart';
 import 'detail_kelas.dart';
 import '../../models/item_model.dart';
+import 'package:monitoring_app/widgets/navbar.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -16,76 +17,20 @@ class _DashboardPageState extends State<DashboardPage> {
   ItemType selectedMenu = ItemType.wisma;
 
   final List<ItemModel> items = [
-    ItemModel(
-      title: "Anggrek",
-      imagePath: "lib/assets/images/anggrek.jpg",
-      type: ItemType.wisma,
-    ),
-    ItemModel(
-      title: "Bougenville",
-      imagePath: "lib/assets/images/bougenville.jpg",
-      type: ItemType.wisma,
-    ),
-    ItemModel(
-      title: "Cempaka",
-      imagePath: "lib/assets/images/cempaka.jpg",
-      type: ItemType.wisma,
-    ),
-    ItemModel(
-      title: "Dahliia",
-      imagePath: "lib/assets/images/dahliia.jpg",
-      type: ItemType.wisma,
-    ),
-    ItemModel(
-      title: "Edelweiss",
-      imagePath: "lib/assets/images/edelweiss.jpg",
-      type: ItemType.wisma,
-    ),
-    ItemModel(
-      title: "Flamboyan",
-      imagePath: "lib/assets/images/flamboyan.jpg",
-      type: ItemType.wisma,
-    ),
-    ItemModel(
-      title: "Gladiol",
-      imagePath: "lib/assets/images/gladiol.jpg",
-      type: ItemType.wisma,
-    ),
-    ItemModel(
-      title: "Hortensia",
-      imagePath: "lib/assets/images/hortensia.jpg",
-      type: ItemType.wisma,
-    ),
-    ItemModel(
-      title: "Toddopuli",
-      imagePath: "lib/assets/images/toddopuli.jpg",
-      type: ItemType.wisma,
-    ),
-    ItemModel(
-      title: "Kelas A",
-      imagePath: "lib/assets/images/kelas_a.jpg",
-      type: ItemType.kelas,
-    ),
-    ItemModel(
-      title: "Kelas B",
-      imagePath: "lib/assets/images/kelas_b.jpg",
-      type: ItemType.kelas,
-    ),
-    ItemModel(
-      title: "Kelas Lab B",
-      imagePath: "lib/assets/images/kelas_lab_b.jpg",
-      type: ItemType.kelas,
-    ),
-    ItemModel(
-      title: "Kelas Toddopuli",
-      imagePath: "lib/assets/images/kelas_toddopuli.jpg",
-      type: ItemType.kelas,
-    ),
-    ItemModel(
-      title: "Aula",
-      imagePath: "lib/assets/images/aula.jpg",
-      type: ItemType.kelas,
-    ),
+    ItemModel(title: "Anggrek", imagePath: "lib/assets/images/anggrek.jpg", type: ItemType.wisma),
+    ItemModel(title: "Bougenville", imagePath: "lib/assets/images/bougenville.jpg", type: ItemType.wisma),
+    ItemModel(title: "Cempaka", imagePath: "lib/assets/images/cempaka.jpg", type: ItemType.wisma),
+    ItemModel(title: "Dahliia", imagePath: "lib/assets/images/dahliia.jpg", type: ItemType.wisma),
+    ItemModel(title: "Edelweiss", imagePath: "lib/assets/images/edelweiss.jpg", type: ItemType.wisma),
+    ItemModel(title: "Flamboyan", imagePath: "lib/assets/images/flamboyan.jpg", type: ItemType.wisma),
+    ItemModel(title: "Gladiol", imagePath: "lib/assets/images/gladiol.jpg", type: ItemType.wisma),
+    ItemModel(title: "Hortensia", imagePath: "lib/assets/images/hortensia.jpg", type: ItemType.wisma),
+    ItemModel(title: "Toddopuli", imagePath: "lib/assets/images/toddopuli.jpg", type: ItemType.wisma),
+    ItemModel(title: "Kelas A", imagePath: "lib/assets/images/kelas_a.jpg", type: ItemType.kelas),
+    ItemModel(title: "Kelas B", imagePath: "lib/assets/images/kelas_b.jpg", type: ItemType.kelas),
+    ItemModel(title: "Kelas Lab B", imagePath: "lib/assets/images/kelas_lab_b.jpg", type: ItemType.kelas),
+    ItemModel(title: "Kelas Toddopuli", imagePath: "lib/assets/images/kelas_toddopuli.jpg", type: ItemType.kelas),
+    ItemModel(title: "Aula", imagePath: "lib/assets/images/aula.jpg", type: ItemType.kelas),
   ];
 
   void _showAddWismaDialog() {
@@ -94,22 +39,20 @@ class _DashboardPageState extends State<DashboardPage> {
       barrierDismissible: true,
       builder: (BuildContext context) {
         return AddWismaPopUp(
-            type: selectedMenu,
-            onSave: (ItemModel newItem) {
-                setState(() {
-                items.add(newItem);
-                });
-            },
+          type: selectedMenu,
+          onSave: (ItemModel newItem) {
+            setState(() {
+              items.add(newItem);
+            });
+          },
         );
-
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final filteredItems =
-        items.where((item) => item.type == selectedMenu).toList();
+    final filteredItems = items.where((item) => item.type == selectedMenu).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -120,18 +63,14 @@ class _DashboardPageState extends State<DashboardPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: const [
-                  Text("Selamat Datang, User",
-                      style: TextStyle(fontSize: 16)),
+                  Text("Selamat Datang, User", style: TextStyle(fontSize: 16)),
                   Icon(Icons.notifications_none)
                 ],
               ),
-
               const SizedBox(height: 10),
-
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
@@ -163,9 +102,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
               SizedBox(
                 height: 180,
                 child: Stack(
@@ -197,36 +134,24 @@ class _DashboardPageState extends State<DashboardPage> {
                                 child: Transform.translate(
                                   offset: const Offset(0, -45),
                                   child: Padding(
-                                    padding:
-                                        const EdgeInsets.only(left: 30),
+                                    padding: const EdgeInsets.only(left: 30),
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Icon(Icons.flash_on,
-                                            color: Colors.amber,
-                                            size: 22),
+                                        const Icon(Icons.flash_on, color: Colors.amber, size: 22),
                                         const SizedBox(height: 6),
                                         const Text(
                                           "122",
                                           style: TextStyle(
                                             fontSize: 28,
-                                            fontWeight:
-                                                FontWeight.bold,
+                                            fontWeight: FontWeight.bold,
                                             color: primaryTeal,
                                           ),
                                         ),
                                         Text(
-                                          selectedMenu ==
-                                                  ItemType.wisma
-                                              ? "Kamar"
-                                              : "Kelas",
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight:
-                                                FontWeight.w600,
-                                          ),
+                                          selectedMenu == ItemType.wisma ? "Kamar" : "Kelas",
+                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                                         ),
                                       ],
                                     ),
@@ -241,22 +166,15 @@ class _DashboardPageState extends State<DashboardPage> {
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Container(
-                              padding:
-                                  const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 16),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFD8E7EA),
-                                borderRadius:
-                                    BorderRadius.circular(16),
-                                border:
-                                    Border.all(color: primaryTeal),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: primaryTeal),
                               ),
                               child: Column(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.center,
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: _buildStatus(),
                               ),
                             ),
@@ -267,45 +185,29 @@ class _DashboardPageState extends State<DashboardPage> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 25),
-
               Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    selectedMenu == ItemType.wisma
-                        ? "Jenis Wisma"
-                        : "Jenis Kelas",
-                    style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: primaryTeal),
+                    selectedMenu == ItemType.wisma ? "Jenis Wisma" : "Jenis Kelas",
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: primaryTeal),
                   ),
                   GestureDetector(
                     onTap: _showAddWismaDialog,
                     child: const CircleAvatar(
                       radius: 14,
-                      backgroundColor:
-                          Color(0xFFE8F1F3),
-                      child: Icon(
-                        Icons.add,
-                        size: 18,
-                        color: primaryTeal,
-                      ),
+                      backgroundColor: Color(0xFFE8F1F3),
+                      child: Icon(Icons.add, size: 18, color: primaryTeal),
                     ),
                   )
                 ],
               ),
-
               const SizedBox(height: 15),
-
               Expanded(
                 child: GridView.builder(
                   itemCount: filteredItems.length,
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     crossAxisSpacing: 15,
                     mainAxisSpacing: 15,
@@ -314,27 +216,27 @@ class _DashboardPageState extends State<DashboardPage> {
                   itemBuilder: (context, index) {
                     final item = filteredItems[index];
                     return WismaCard(
-                        title: item.title,
-                        imagePath: item.imagePath,
-                        onTap: () async {
-                            final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                builder: (_) => DetailKelasPage(item: item),
-                                ),
-                            );
+                      title: item.title,
+                      imagePath: item.imagePath,
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => DetailKelasPage(item: item)),
+                        );
 
-                            if (result == true) {
-                                setState(() {
-                                    item.isDone = true;
-                                });
+                        // GUARD: Cek mounted sebelum menggunakan context atau setState setelah async
+                        if (!mounted) return;
 
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text("${item.title} selesai ✔")),
-                                );
-                            }
-                        },
+                        if (result == true) {
+                          setState(() {
+                            item.isDone = true;
+                          });
 
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("${item.title} selesai ✔")),
+                          );
+                        }
+                      },
                     );
                   },
                 ),
@@ -342,6 +244,16 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: 0,
+        onTap: (index) {
+          if (index == 2) {
+            Navigator.pushReplacementNamed(context, '/profil');
+          } else if (index == 1) {
+            Navigator.pushReplacementNamed(context, '/riwayat');
+          }
+        },
       ),
     );
   }
@@ -372,27 +284,15 @@ class _DashboardPageState extends State<DashboardPage> {
 class StatusRow extends StatelessWidget {
   final String number;
   final String label;
-
-  const StatusRow({
-    super.key,
-    required this.number,
-    required this.label,
-  });
+  const StatusRow({super.key, required this.number, required this.label});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(
-          number,
-          style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF008996)),
-        ),
+        Text(number, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF008996))),
         const SizedBox(width: 12),
-        Text(label,
-            style: const TextStyle(fontSize: 14)),
+        Text(label, style: const TextStyle(fontSize: 14)),
       ],
     );
   }
@@ -402,13 +302,7 @@ class WismaCard extends StatelessWidget {
   final String title;
   final String imagePath;
   final VoidCallback onTap;
-
-  const WismaCard({
-    super.key,
-    required this.title,
-    required this.imagePath,
-    required this.onTap,
-  });
+  const WismaCard({super.key, required this.title, required this.imagePath, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -417,10 +311,7 @@ class WismaCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(15),
-          image: DecorationImage(
-            image: AssetImage(imagePath),
-            fit: BoxFit.cover,
-          ),
+          image: DecorationImage(image: AssetImage(imagePath), fit: BoxFit.cover),
         ),
         child: Container(
           decoration: BoxDecoration(
@@ -435,15 +326,10 @@ class WismaCard extends StatelessWidget {
           alignment: Alignment.bottomLeft,
           child: Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
           ),
         ),
       ),
     );
   }
 }
-
