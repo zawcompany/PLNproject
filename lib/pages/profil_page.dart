@@ -80,7 +80,7 @@ class ProfileScreen extends StatelessWidget {
           width: double.infinity,
           height: 220,
           child: SvgPicture.asset(
-            'lib/assets/images/header_profile.svg',
+            'lib/assets/images/header_riwayat.svg',
             fit: BoxFit.cover,
           ),
         ),
@@ -340,11 +340,11 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.redAccent),
+          borderSide: const BorderSide(color: Color.fromRGBO(249, 58, 58, 0.711)),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+          borderSide: const BorderSide(color: Color.fromRGBO(249, 58, 58, 0.711), width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         suffixIcon: isPassword

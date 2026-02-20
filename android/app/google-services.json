@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1063524992171",
+    "project_id": "pln-monitoring-wisma-kelas",
+    "storage_bucket": "pln-monitoring-wisma-kelas.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1063524992171:android:28298480375a10206de3ee",
+        "android_client_info": {
+          "package_name": "com.example.monitoring_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBy4Og38mF5dz9QlD6Ah_EKbIa8-tiDf4k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

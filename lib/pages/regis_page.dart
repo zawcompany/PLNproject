@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'login_page.dart';
-import 'karyawan/kdash_wisma.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -11,8 +11,56 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmController = TextEditingController();
+
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  bool _isLoading = false;
+
+  Future<void> registerUser() async {
+  if (_passwordController.text != _confirmController.text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Password tidak sama")),
+    );
+    return;
+  }
+
+  try {
+    setState(() => _isLoading = true);
+
+    UserCredential userCredential =
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
+
+    String uid = userCredential.user!.uid;
+
+    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'name': _nameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'role': 'staff',
+      'createdAt': Timestamp.now(),
+    });
+
+    if (!mounted) return;
+
+    Navigator.pushReplacementNamed(context, '/kdash_wisma');
+  } on FirebaseAuthException catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(e.message ?? "Terjadi kesalahan")),
+    );
+  } finally {
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -23,8 +71,6 @@ class _RegisterPageState extends State<RegisterPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-
-          // gambar
           Positioned(
             top: size.height * 0.05,
             left: 0,
@@ -35,8 +81,6 @@ class _RegisterPageState extends State<RegisterPage> {
               fit: BoxFit.contain,
             ),
           ),
-
-          // container
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -48,11 +92,11 @@ class _RegisterPageState extends State<RegisterPage> {
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
                 ),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black12,
                     blurRadius: 20,
-                    offset: const Offset(0, -5),
+                    offset: Offset(0, -5),
                   ),
                 ],
               ),
@@ -61,7 +105,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     const Text(
                       "Daftar",
                       style: TextStyle(
@@ -70,56 +113,53 @@ class _RegisterPageState extends State<RegisterPage> {
                         color: primaryTeal,
                       ),
                     ),
-
                     const Text(
                       "Lengkapi data berikut untuk membuat akun",
-                      style: TextStyle(fontSize: 14, color: Colors.black54),
+                      style:
+                          TextStyle(fontSize: 14, color: Colors.black54),
                     ),
-
                     const SizedBox(height: 30),
 
-                    // nama
                     const Text("Nama", style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 8),
                     _buildTextField(
                       prefixIcon: Icons.person_outline,
+                      controller: _nameController,
                     ),
 
                     const SizedBox(height: 20),
 
-                    // email
                     const Text("Email", style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 8),
                     _buildTextField(
                       prefixIcon: Icons.email_outlined,
+                      controller: _emailController,
                     ),
 
                     const SizedBox(height: 20),
 
-                    // password
                     const Text("Password", style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 8),
                     _buildTextField(
                       prefixIcon: Icons.lock_outline,
+                      controller: _passwordController,
                       isPassword: true,
-                      isConfirm: false,
                     ),
 
                     const SizedBox(height: 20),
 
-                    // konfirmasi password
                     const Text("Konfirmasi Password",
                         style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 8),
                     _buildTextField(
                       prefixIcon: Icons.lock_outline,
+                      controller: _confirmController,
                       isPassword: true,
                       isConfirm: true,
                     ),
 
                     const SizedBox(height: 30),
 
-                    // button daftar
                     SizedBox(
                       width: double.infinity,
                       height: 55,
@@ -130,26 +170,24 @@ class _RegisterPageState extends State<RegisterPage> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const DashboardPage()),
-                          );
-                        },
-                        child: const Text(
-                          "Daftar",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        onPressed: _isLoading ? null : registerUser,
+                        child: _isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : const Text(
+                                "Daftar",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
                     ),
 
                     const SizedBox(height: 20),
 
-                    // footer
                     Center(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -157,8 +195,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           const Text("Sudah punya akun? "),
                           GestureDetector(
                             onTap: () {
-                              Navigator.pop(context, MaterialPageRoute(
-                              builder: (context) => const LoginPage(),));
+                              Navigator.pop(context);
                             },
                             child: const Text(
                               "Masuk",
@@ -183,6 +220,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Widget _buildTextField({
     required IconData prefixIcon,
+    required TextEditingController controller,
     bool isPassword = false,
     bool isConfirm = false,
   }) {
@@ -192,6 +230,7 @@ class _RegisterPageState extends State<RegisterPage> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: TextField(
+        controller: controller,
         obscureText: isPassword
             ? (isConfirm ? _obscureConfirm : _obscurePassword)
             : false,
@@ -217,7 +256,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   },
                 )
               : null,
-          contentPadding: const EdgeInsets.symmetric(vertical: 15),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 15),
         ),
       ),
     );

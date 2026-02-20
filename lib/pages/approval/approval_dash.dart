@@ -16,14 +16,17 @@ class _DashApprovalState extends State<DashApproval> {
 
   // Data Dummy
   final List<Map<String, String>> wismaTypes = [
-    {"title": "Cempaka", "img": "lib/assets/images/cempaka.jpg"},
-    {"title": "Bougenville", "img": "lib/assets/images/bougenville.jpg"},
+    {"title": "Cempaka", "img": "lib/assets/images/cempaka.png"},
+    {"title": "Flamboyan", "img": "lib/assets/images/flamboyan.png"},
+    {"title": "Gladiol", "img": "lib/assets/images/gladiol.png"},
+    {"title": "Edelweiss", "img": "lib/assets/images/edelweiss.png"},
+    {"title": "Bougenville", "img": "lib/assets/images/bougenville.png"},
   ];
 
   final List<Map<String, String>> kelasTypes = [
-    {"title": "Kelas A", "img": "lib/assets/images/kelas_a.jpg"},
-    {"title": "Kelas B", "img": "lib/assets/images/kelas_b.jpg"},
-    {"title": "Aula", "img": "lib/assets/images/aula.jpg"},
+    {"title": "Kelas A", "img": "lib/assets/images/kelas_a.png"},
+    {"title": "Kelas B", "img": "lib/assets/images/kelas_b.png"},
+    {"title": "Aula", "img": "lib/assets/images/aula.png"},
   ];
 
   @override
@@ -42,7 +45,7 @@ class _DashApprovalState extends State<DashApproval> {
               children: [
                 const SizedBox(height: 20),
 
-                // ================= HEADER =================
+                // header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -67,7 +70,7 @@ class _DashApprovalState extends State<DashApproval> {
 
                 const SizedBox(height: 25),
 
-                // ================= GRID 2 BOX =================
+                // grid
                 Row(
                   children: [
                     Expanded(
@@ -94,14 +97,14 @@ class _DashApprovalState extends State<DashApproval> {
                 const Divider(color: Colors.black12, thickness: 1),
                 const SizedBox(height: 15),
 
-                // ================= BAGIAN WISMA =================
+                // bagian wisma
                 _buildSectionHeader("Jenis Wisma"),
                 const SizedBox(height: 10),
                 _buildCarousel(wismaTypes),
 
                 const SizedBox(height: 25),
 
-                // ================= BAGIAN KELAS =================
+                // bagian kelas
                 _buildSectionHeader("Jenis Kelas"),
                 const SizedBox(height: 10),
                 _buildCarousel(kelasTypes),
@@ -139,15 +142,15 @@ class _DashApprovalState extends State<DashApproval> {
     return CarouselSlider(
       options: CarouselOptions(
         height: 180,
-        viewportFraction: 0.9, // Ukuran slide hampir memenuhi layar
-        enableInfiniteScroll: false, // Tidak berputar terus menerus
-        enlargeCenterPage: false, // TIDAK menonjolkan bagian tengah (rata)
-        padEnds: false, // Mulai dari sisi kiri layar
+        viewportFraction: 0.9, 
+        enableInfiniteScroll: false, 
+        enlargeCenterPage: false, 
+        padEnds: false, 
       ),
       items: data.map((item) {
         return Container(
           width: double.infinity,
-          margin: const EdgeInsets.only(right: 10), // Jarak antar slide
+          margin: const EdgeInsets.only(right: 10), 
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             image: DecorationImage(image: AssetImage(item['img']!), fit: BoxFit.cover),

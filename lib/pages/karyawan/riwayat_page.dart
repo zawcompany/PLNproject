@@ -198,7 +198,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
             borderRadius: BorderRadius.circular(15),
             border: Border.all(color: const Color(0xFFF0F4F4)),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+              BoxShadow(color: Colors.black, blurRadius: 10, offset: const Offset(0, 4)),
             ],
           ),
           child: Column(

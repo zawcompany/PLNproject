@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'lupa_pw_page.dart';
 import 'regis_page.dart';
-import 'karyawan/kdash_wisma.dart';
-import '../../models/user_session.dart'; // Sesuaikan path file user_session Anda
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,14 +14,58 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _obscureText = true;
-  
-  // 1. Tambahkan Controller untuk mengambil teks dari input
+  bool _isLoading = false;
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  Future<void> loginUser() async {
+    try {
+      setState(() => _isLoading = true);
+
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      String uid = userCredential.user!.uid;
+
+      DocumentSnapshot userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+      if (!userDoc.exists) {
+        throw Exception("Data user tidak ditemukan");
+      }
+
+      String role = userDoc['role'];
+
+      if (!mounted) return;
+
+      if (role == "approval") {
+        Navigator.pushReplacementNamed(context, '/dash_approval');
+      } else {
+        Navigator.pushReplacementNamed(context, '/kdash_wisma');
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? "Login gagal")),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   void dispose() {
-    // Bersihkan controller saat widget dihapus dari memori
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -46,11 +90,10 @@ class _LoginPageState extends State<LoginPage> {
               fit: BoxFit.contain,
             ),
           ),
-
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              height: size.height * 0.6, 
+              height: size.height * 0.6,
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -58,11 +101,11 @@ class _LoginPageState extends State<LoginPage> {
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
                 ),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black12,
                     blurRadius: 20,
-                    offset: const Offset(0, -5),
+                    offset: Offset(0, -5),
                   ),
                 ],
               ),
@@ -85,18 +128,16 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 30),
 
-                    // Input Email
                     const Text("Email", style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 8),
                     _buildTextField(
-                      controller: _emailController, // Hubungkan controller
+                      controller: _emailController,
                       hintText: "Masukkan email",
                       prefixIcon: Icons.email_outlined,
                     ),
 
                     const SizedBox(height: 20),
 
-                    // Input Password
                     const Text("Password", style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 8),
                     _buildTextField(
@@ -106,7 +147,6 @@ class _LoginPageState extends State<LoginPage> {
                       isPassword: true,
                     ),
 
-                    // Lupa Password
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
@@ -114,7 +154,8 @@ class _LoginPageState extends State<LoginPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const ForgotPasswordPage(),
+                              builder: (context) =>
+                                  const ForgotPasswordPage(),
                             ),
                           );
                         },
@@ -127,7 +168,6 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 20),
 
-                    // Tombol Masuk
                     SizedBox(
                       width: double.infinity,
                       height: 55,
@@ -138,32 +178,24 @@ class _LoginPageState extends State<LoginPage> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        onPressed: () {
-                          // 2. Logika Navigasi & Role
-                          String email = _emailController.text.toLowerCase();
-
-                          if (email.contains("admin") || email.contains("approver")) {
-                            UserSession.role = "approval"; // Set ke role approval
-                            Navigator.pushReplacementNamed(context, '/dash_approval');
-                          } else {
-                            UserSession.role = "karyawan"; // Set ke role karyawan
-                            Navigator.pushReplacementNamed(context, '/kdash_wisma');
-                          }
-                        },
-                        child: const Text(
-                          "Masuk",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        onPressed: _isLoading ? null : loginUser,
+                        child: _isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : const Text(
+                                "Masuk",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
                     ),
 
                     const SizedBox(height: 20),
 
-                    // Footer Daftar
                     Center(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -173,7 +205,9 @@ class _LoginPageState extends State<LoginPage> {
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => const RegisterPage()),
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const RegisterPage()),
                               );
                             },
                             child: const Text(
@@ -197,7 +231,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // 3. Perbarui fungsi buildTextField untuk menerima controller
   Widget _buildTextField({
     required TextEditingController controller,
     required String hintText,
@@ -210,7 +243,7 @@ class _LoginPageState extends State<LoginPage> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: TextField(
-        controller: controller, 
+        controller: controller,
         obscureText: isPassword ? _obscureText : false,
         decoration: InputDecoration(
           hintText: hintText,
@@ -220,7 +253,9 @@ class _LoginPageState extends State<LoginPage> {
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
-                    _obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    _obscureText
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
                     color: Colors.grey,
                   ),
                   onPressed: () {
@@ -230,7 +265,8 @@ class _LoginPageState extends State<LoginPage> {
                   },
                 )
               : null,
-          contentPadding: const EdgeInsets.symmetric(vertical: 15),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 15),
         ),
       ),
     );

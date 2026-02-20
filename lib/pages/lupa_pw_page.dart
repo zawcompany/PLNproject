@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'login_page.dart';
-import 'regis_page.dart';
+// import 'login_page.dart';
+// import 'regis_page.dart';
 import 'lupa_pw2_page.dart';
 
 class ForgotPasswordPage extends StatelessWidget {
@@ -134,7 +134,7 @@ class ForgotPasswordPage extends StatelessWidget {
 
                     const SizedBox(height: 20),
 
-                    // ===== FOOTER =====
+                    // foo
                     Center(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,

@@ -16,20 +16,20 @@ class _DashboardPageState extends State<DashboardPage> {
   ItemType selectedMenu = ItemType.wisma;
 
   final List<ItemModel> items = [
-    ItemModel(title: "Anggrek", imagePath: "lib/assets/images/anggrek.jpg", type: ItemType.wisma),
-    ItemModel(title: "Bougenville", imagePath: "lib/assets/images/bougenville.jpg", type: ItemType.wisma),
-    ItemModel(title: "Cempaka", imagePath: "lib/assets/images/cempaka.jpg", type: ItemType.wisma),
-    ItemModel(title: "Dahliia", imagePath: "lib/assets/images/dahliia.jpg", type: ItemType.wisma),
-    ItemModel(title: "Edelweiss", imagePath: "lib/assets/images/edelweiss.jpg", type: ItemType.wisma),
-    ItemModel(title: "Flamboyan", imagePath: "lib/assets/images/flamboyan.jpg", type: ItemType.wisma),
-    ItemModel(title: "Gladiol", imagePath: "lib/assets/images/gladiol.jpg", type: ItemType.wisma),
-    ItemModel(title: "Hortensia", imagePath: "lib/assets/images/hortensia.jpg", type: ItemType.wisma),
-    ItemModel(title: "Toddopuli", imagePath: "lib/assets/images/toddopuli.jpg", type: ItemType.wisma),
-    ItemModel(title: "Kelas A", imagePath: "lib/assets/images/kelas_a.jpg", type: ItemType.kelas),
-    ItemModel(title: "Kelas B", imagePath: "lib/assets/images/kelas_b.jpg", type: ItemType.kelas),
-    ItemModel(title: "Kelas Lab B", imagePath: "lib/assets/images/kelas_lab_b.jpg", type: ItemType.kelas),
-    ItemModel(title: "Kelas Toddopuli", imagePath: "lib/assets/images/kelas_toddopuli.jpg", type: ItemType.kelas),
-    ItemModel(title: "Aula", imagePath: "lib/assets/images/aula.jpg", type: ItemType.kelas),
+    ItemModel(title: "Anggrek", imagePath: "lib/assets/images/anggrek.png", type: ItemType.wisma),
+    ItemModel(title: "Bougenville", imagePath: "lib/assets/images/bougenville.png", type: ItemType.wisma),
+    ItemModel(title: "Cempaka", imagePath: "lib/assets/images/cempaka.png", type: ItemType.wisma),
+    ItemModel(title: "Dahliia", imagePath: "lib/assets/images/dahliia.png", type: ItemType.wisma),
+    ItemModel(title: "Edelweiss", imagePath: "lib/assets/images/edelweiss.png", type: ItemType.wisma),
+    ItemModel(title: "Flamboyan", imagePath: "lib/assets/images/flamboyan.png", type: ItemType.wisma),
+    ItemModel(title: "Gladiol", imagePath: "lib/assets/images/gladiol.png", type: ItemType.wisma),
+    ItemModel(title: "Hortensia", imagePath: "lib/assets/images/hortensia.png", type: ItemType.wisma),
+    ItemModel(title: "Toddopuli", imagePath: "lib/assets/images/toddopuli.png", type: ItemType.wisma),
+    ItemModel(title: "Kelas A", imagePath: "lib/assets/images/kelas_a.png", type: ItemType.kelas),
+    ItemModel(title: "Kelas B", imagePath: "lib/assets/images/kelas_b.png", type: ItemType.kelas),
+    ItemModel(title: "Kelas Lab B", imagePath: "lib/assets/images/kelas_lab_b.png", type: ItemType.kelas),
+    ItemModel(title: "Kelas Toddopuli", imagePath: "lib/assets/images/kelas_toddopuli.png", type: ItemType.kelas),
+    ItemModel(title: "Aula", imagePath: "lib/assets/images/aula.png", type: ItemType.kelas),
   ];
 
   @override

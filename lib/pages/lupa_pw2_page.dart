@@ -24,7 +24,7 @@ class EmailSentPage extends StatelessWidget {
               "lib/assets/images/lupapw_pict.svg",
               width: size.width,
               fit: BoxFit.contain,
-            ),
+            ),   
           ),
 
           // container bawah
@@ -41,7 +41,7 @@ class EmailSentPage extends StatelessWidget {
                   topRight: Radius.circular(30),
                 ),
               ),
-              child: Column( // ✅ FIX DI SINI
+              child: Column( 
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
 
