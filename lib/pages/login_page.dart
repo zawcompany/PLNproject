@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'lupa_pw_page.dart';
 import 'regis_page.dart';
 import 'karyawan/kdash_wisma.dart';
+import '../../models/user_session.dart'; // Sesuaikan path file user_session Anda
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,6 +14,18 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _obscureText = true;
+  
+  // 1. Tambahkan Controller untuk mengambil teks dari input
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    // Bersihkan controller saat widget dihapus dari memori
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +89,8 @@ class _LoginPageState extends State<LoginPage> {
                     const Text("Email", style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 8),
                     _buildTextField(
-                      hintText: "",
+                      controller: _emailController, // Hubungkan controller
+                      hintText: "Masukkan email",
                       prefixIcon: Icons.email_outlined,
                     ),
 
@@ -86,7 +100,8 @@ class _LoginPageState extends State<LoginPage> {
                     const Text("Password", style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 8),
                     _buildTextField(
-                      hintText: "",
+                      controller: _passwordController,
+                      hintText: "Masukkan password",
                       prefixIcon: Icons.lock_outline,
                       isPassword: true,
                     ),
@@ -110,7 +125,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
 
-
                     const SizedBox(height: 20),
 
                     // Tombol Masuk
@@ -125,12 +139,16 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const DashboardPage(),
-                            ),
-                          );
+                          // 2. Logika Navigasi & Role
+                          String email = _emailController.text.toLowerCase();
+
+                          if (email.contains("admin") || email.contains("approver")) {
+                            UserSession.role = "approval"; // Set ke role approval
+                            Navigator.pushReplacementNamed(context, '/dash_approval');
+                          } else {
+                            UserSession.role = "karyawan"; // Set ke role karyawan
+                            Navigator.pushReplacementNamed(context, '/kdash_wisma');
+                          }
                         },
                         child: const Text(
                           "Masuk",
@@ -179,7 +197,9 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  // 3. Perbarui fungsi buildTextField untuk menerima controller
   Widget _buildTextField({
+    required TextEditingController controller,
     required String hintText,
     required IconData prefixIcon,
     bool isPassword = false,
@@ -190,8 +210,11 @@ class _LoginPageState extends State<LoginPage> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: TextField(
+        controller: controller, 
         obscureText: isPassword ? _obscureText : false,
         decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
           border: InputBorder.none,
           prefixIcon: Icon(prefixIcon, color: Colors.grey),
           suffixIcon: isPassword

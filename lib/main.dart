@@ -5,6 +5,7 @@ import 'pages/regis_page.dart';
 import 'pages/karyawan/kdash_wisma.dart';
 import 'pages/profil_page.dart';
 import 'pages/karyawan/riwayat_page.dart'; 
+import 'pages/approval/approval_dash.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,14 +26,16 @@ class MyApp extends StatelessWidget {
           primary: const Color(0xFF008996),
         ),
       ),
-      home: const WelcomePage(), 
+      // home: const WelcomePage(),
+      home: DashApproval(), 
 
       routes: {
         '/login': (context) => const LoginPage(),
-        '/register': (context) => const RegisterPage(), 
+        '/register': (context) => const RegisterPage(),
         '/kdash_wisma': (context) => const DashboardPage(), 
-        '/riwayat': (context) => const RiwayatPage(), 
-        '/profil': (context) => const ProfileScreen(), 
+        '/dash_approval': (context) => DashApproval(),
+        '/riwayat': (context) => const RiwayatPage(),
+        '/profil': (context) => const ProfileScreen(),
       },
     );
   }
