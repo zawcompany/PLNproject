@@ -16,51 +16,61 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmController = TextEditingController();
 
+  String _selectedRole = 'karyawan'; 
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
 
   Future<void> registerUser() async {
-  if (_passwordController.text != _confirmController.text) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Password tidak sama")),
-    );
-    return;
-  }
+    if (_passwordController.text != _confirmController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Password tidak sama")),
+      );
+      return;
+    }
 
-  try {
-    setState(() => _isLoading = true);
+    try {
+      setState(() => _isLoading = true);
 
-    UserCredential userCredential =
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-      email: _emailController.text.trim(),
-      password: _passwordController.text.trim(),
-    );
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
 
-    String uid = userCredential.user!.uid;
+      String uid = userCredential.user!.uid;
 
-    await FirebaseFirestore.instance.collection('users').doc(uid).set({
-      'name': _nameController.text.trim(),
-      'email': _emailController.text.trim(),
-      'role': 'staff',
-      'createdAt': Timestamp.now(),
-    });
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'name': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'role': _selectedRole, 
+        'createdAt': Timestamp.now(),
+      });
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    Navigator.pushReplacementNamed(context, '/kdash_wisma');
-  } on FirebaseAuthException catch (e) {
-    if (!mounted) return;
+      if (_selectedRole == 'approval') {
+        Navigator.pushReplacementNamed(context, '/dash_approval');
+      } else {
+        Navigator.pushReplacementNamed(context, '/kdash_wisma');
+      }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(e.message ?? "Terjadi kesalahan")),
-    );
-  } finally {
-    if (mounted) {
-      setState(() => _isLoading = false);
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? "Terjadi kesalahan")),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Firestore Error: ${e.toString()}")),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -84,15 +94,15 @@ class _RegisterPageState extends State<RegisterPage> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              height: size.height * 0.68,
+              height: size.height * 0.72, 
               width: double.infinity,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
                 ),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
                     color: Colors.black12,
                     blurRadius: 20,
@@ -115,10 +125,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     const Text(
                       "Lengkapi data berikut untuk membuat akun",
-                      style:
-                          TextStyle(fontSize: 14, color: Colors.black54),
+                      style: TextStyle(fontSize: 14, color: Colors.black54),
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 25),
 
                     const Text("Nama", style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 8),
@@ -127,7 +136,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       controller: _nameController,
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 15),
 
                     const Text("Email", style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 8),
@@ -136,7 +145,39 @@ class _RegisterPageState extends State<RegisterPage> {
                       controller: _emailController,
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 15),
+
+                    const Text("Pilih Role", style: TextStyle(color: Colors.grey)),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF2F2F2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedRole,
+                          isExpanded: true,
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 14, 
+                          ),
+                          icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                          items: const [
+                            DropdownMenuItem(value: 'karyawan', child: Text("Karyawan")),
+                            DropdownMenuItem(value: 'approval', child: Text("Approval")),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedRole = value!;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 15),
 
                     const Text("Password", style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 8),
@@ -146,10 +187,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       isPassword: true,
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 15),
 
-                    const Text("Konfirmasi Password",
-                        style: TextStyle(color: Colors.grey)),
+                    const Text("Konfirmasi Password", style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 8),
                     _buildTextField(
                       prefixIcon: Icons.lock_outline,
@@ -172,9 +212,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         onPressed: _isLoading ? null : registerUser,
                         child: _isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
+                            ? const CircularProgressIndicator(color: Colors.white)
                             : const Text(
                                 "Daftar",
                                 style: TextStyle(
@@ -194,9 +232,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         children: [
                           const Text("Sudah punya akun? "),
                           GestureDetector(
-                            onTap: () {
-                              Navigator.pop(context);
-                            },
+                            onTap: () => Navigator.pop(context),
                             child: const Text(
                               "Masuk",
                               style: TextStyle(
@@ -256,8 +292,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   },
                 )
               : null,
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 15),
+          contentPadding: const EdgeInsets.symmetric(vertical: 15),
         ),
       ),
     );

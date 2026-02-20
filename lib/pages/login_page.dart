@@ -24,7 +24,7 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => _isLoading = true);
 
       UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
@@ -48,14 +48,16 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.pushReplacementNamed(context, '/kdash_wisma');
       }
     } on FirebaseAuthException catch (e) {
+      print("DEBUG: Error Firebase Auth -> ${e.code}"); 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? "Login gagal")),
+        SnackBar(content: Text("Auth Error: ${e.message}")),
       );
     } catch (e) {
+      print("DEBUG: Error Lainnya -> $e"); 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(content: Text("Sistem Error: $e")),
       );
     } finally {
       if (mounted) {
