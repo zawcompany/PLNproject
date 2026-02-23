@@ -24,7 +24,6 @@ class DetailKelasPage extends StatefulWidget {
 }
 
 class _DetailKelasPageState extends State<DetailKelasPage> {
-  // POP UP PEMILIHAN JENIS PESANAN (KHUSUS WISMA)
   void _showBookingTypeDialog(RoomModel room) {
     showDialog(
       context: context,

@@ -70,8 +70,8 @@ class _ComplaintDialogState extends State<ComplaintDialog> {
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87)),
                     const SizedBox(height: 8),
                     Wrap(
-                      spacing: 6, // Jarak horizontal antar chip
-                      runSpacing: 0, // Jarak vertikal antar baris chip dibuat mepet
+                      spacing: 6,  
+                      runSpacing: 0,
                       children: entry.value.map((issue) {
                         final fullIssueName = "${entry.key}: $issue";
                         final isSelected = selectedIssues.contains(fullIssueName);
@@ -88,10 +88,9 @@ class _ComplaintDialogState extends State<ComplaintDialog> {
                               }
                             });
                           },
-                          // Pengaturan agar chip rapat dan teks kecil
                           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           labelStyle: TextStyle(
-                            fontSize: 10.5, // Ukuran teks item
+                            fontSize: 10.5, 
                             color: isSelected ? Colors.white : Colors.black87,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           ),

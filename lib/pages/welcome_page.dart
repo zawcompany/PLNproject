@@ -16,7 +16,7 @@ class WelcomePage extends StatelessWidget {
       body: SafeArea(
         child: Stack( 
           children: [
-            // header & gambar
+            // header dan gambar welcoming page 
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

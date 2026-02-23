@@ -129,8 +129,6 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
               const SizedBox(height: 24),
               _buildTotalCard(),
 
-              // SEKSI PEMBAYARAN (NOREK & BUKTI TF) SUDAH DIHAPUS DARI SINI
-
               const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,

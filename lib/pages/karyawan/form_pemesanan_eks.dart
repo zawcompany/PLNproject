@@ -34,7 +34,7 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
   final lakiController = TextEditingController(text: '0');
 
   DateTimeRange? selectedDate;
-  File? buktiPembayaran; //
+  File? buktiPembayaran; 
 
   final currency = NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0);
 
@@ -133,10 +133,9 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
               const SizedBox(height: 24),
               _buildTotalCard(),
 
-              // SEKSI PEMBAYARAN (HANYA MUNCUL JIKA TANGGAL SUDAH DIPILIH)
               if (totalHarga > 0) ...[
                 const SizedBox(height: 24),
-                _buildRekeningCard(), // Box No Rek (Primary Teal)
+                _buildRekeningCard(), 
                 const SizedBox(height: 16),
                 _buildUploadBox("Unggah Bukti Pembayaran", buktiPembayaran != null, _pickImage), // Box Unggah (Abu-abu)
               ],
@@ -202,7 +201,6 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
     );
   }
 
-  // WIDGET BOX UNGGAH (WARNA ABU-ABU)
   Widget _buildUploadBox(String label, bool isFileSelected, VoidCallback onTap) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,7 +293,6 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
     );
   }
 
-  // BOX REKENING (WARNA PRIMARY TEAL)
   Widget _buildRekeningCard() {
     return Container(
       width: double.infinity,

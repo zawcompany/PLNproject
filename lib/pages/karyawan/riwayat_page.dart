@@ -12,7 +12,7 @@ class RiwayatPage extends StatefulWidget {
 class _RiwayatPageState extends State<RiwayatPage> {
   final Color primaryColor = const Color(0xFF008996);
 
-  // Fungsi untuk memunculkan Dialog Filter
+  // Pop up dialog filter
   void _showFilterDialog() {
     showDialog(
       context: context,
@@ -157,7 +157,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
   }
 
   Widget _buildHistoryList() {
-    // Data Riwayat yang disesuaikan dengan Wisma dan Nama Kamar
     final List<Map<String, dynamic>> riwayatItems = [
       {
         "title": "Wisma Hortensia",
@@ -230,13 +229,12 @@ class _RiwayatPageState extends State<RiwayatPage> {
                 ],
               ),
               const SizedBox(height: 4),
-              // Nama Kamar menggunakan Primary Color
               Text(
                 item['detail'], 
                 style: TextStyle(
                   color: primaryColor, 
                   fontSize: 12, 
-                  fontWeight: FontWeight.bold // Dibuat tebal agar lebih jelas
+                  fontWeight: FontWeight.bold 
                 )
               ),
               const Padding(

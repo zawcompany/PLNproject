@@ -53,7 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // Fungsi untuk membuka YouTube
+  // Tuttorial Video
   Future<void> _launchTutorial() async {
     final Uri url = Uri.parse('https://www.youtube.com/watch?v=your_video_id'); // Ganti dengan link Anda
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
@@ -67,7 +67,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
   }
 
-  // LOGIKA RUTE DINAMIS BERDASARKAN ROLE
   void _handleNavigation(int index) {
     if (index == 0) {
       Navigator.pushReplacementNamed(
@@ -108,24 +107,24 @@ Widget build(BuildContext context) {
   Widget _buildHeader() {
     return Stack(
       alignment: Alignment.center,
-      clipBehavior: Clip.none, // Agar foto profil bisa keluar dari batas box header
+      clipBehavior: Clip.none, 
       children: [
-        // 1. Gambar Background Header
+        // Gambar Background Header
         SizedBox(
           width: double.infinity,
-          height: 220, // Tinggi background diperpendek sedikit
+          height: 220, 
           child: SvgPicture.asset(
             'lib/assets/images/header_riwayat.svg',
             fit: BoxFit.cover,
           ),
         ),
-        // 2. Foto Profil (Menimpa)
+        // Foto profil
         Positioned(
-          bottom: -40, // Menggeser foto setengah keluar dari header (radius 40)
+          bottom: -40, 
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 4), // Frame putih
+              border: Border.all(color: Colors.white, width: 4),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
@@ -137,7 +136,6 @@ Widget build(BuildContext context) {
             child: CircleAvatar(
               radius: 40,
               backgroundColor: const Color(0xFFE0E6E6),
-              // Jika ada foto dari Firestore, bisa ditaruh di sini
               child: const Icon(Icons.person, size: 50, color: Colors.white),
             ),
           ),
@@ -149,7 +147,7 @@ Widget build(BuildContext context) {
   Widget _buildUserInfo() {
     return Column(
       children: [
-        const SizedBox(height: 50), // Jarak agar teks tidak tertabrak foto profil yang menimpa
+        const SizedBox(height: 50), 
         Text(
           name, 
           style: TextStyle(
@@ -298,13 +296,12 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
                     minimumSize: const Size(double.infinity, 45),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  // Di dalam class _DialogEditProfilState, pada bagian onPressed tombol Simpan:
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
                       try {
                         final user = FirebaseAuth.instance.currentUser;
                         if (user != null) {
-                          // 1. Update di Firestore
+                          // Update di Firestore
                           await FirebaseFirestore.instance
                               .collection('users')
                               .doc(user.uid)
@@ -313,11 +310,10 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
                             'email': _emailController.text,
                           });
 
-                          // 2. (Opsional) Update display name di Firebase Auth
                           await user.updateDisplayName(_nameController.text);
 
                           if (!mounted) return;
-                          Navigator.pop(context, true); // Kirim 'true' sebagai tanda data berubah
+                          Navigator.pop(context, true); 
                           
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text("Profil berhasil diperbarui!")),

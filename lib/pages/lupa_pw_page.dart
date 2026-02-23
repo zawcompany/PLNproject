@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-// import 'login_page.dart';
-// import 'regis_page.dart';
 import 'lupa_pw2_page.dart';
 
 class ForgotPasswordPage extends StatelessWidget {

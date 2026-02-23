@@ -39,7 +39,6 @@ class MyApp extends StatelessWidget {
         Locale('en', 'US'), 
       ],
       locale: const Locale('id', 'ID'), 
-      // =================================================================
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -47,7 +46,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       // home: const WelcomePage(),
-      home: const DashboardPage(),
+      home: const DashApproval(),
       routes: {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
