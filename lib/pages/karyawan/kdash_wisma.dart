@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'detail_kelas.dart';
 import '../../models/item_model.dart';
 import 'package:monitoring_app/widgets/navbar.dart';
+import '../../data/exsistingdata.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -14,23 +15,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   static const Color primaryTeal = Color(0xFF008996);
   ItemType selectedMenu = ItemType.wisma;
-
-  final List<ItemModel> items = [
-    ItemModel(title: "Anggrek", imagePath: "lib/assets/images/anggrek.png", type: ItemType.wisma),
-    ItemModel(title: "Bougenville", imagePath: "lib/assets/images/bougenville.png", type: ItemType.wisma),
-    ItemModel(title: "Cempaka", imagePath: "lib/assets/images/cempaka.png", type: ItemType.wisma),
-    ItemModel(title: "Dahliia", imagePath: "lib/assets/images/dahliia.png", type: ItemType.wisma),
-    ItemModel(title: "Edelweiss", imagePath: "lib/assets/images/edelweiss.png", type: ItemType.wisma),
-    ItemModel(title: "Flamboyan", imagePath: "lib/assets/images/flamboyan.png", type: ItemType.wisma),
-    ItemModel(title: "Gladiol", imagePath: "lib/assets/images/gladiol.png", type: ItemType.wisma),
-    ItemModel(title: "Hortensia", imagePath: "lib/assets/images/hortensia.png", type: ItemType.wisma),
-    ItemModel(title: "Toddopuli", imagePath: "lib/assets/images/toddopuli.png", type: ItemType.wisma),
-    ItemModel(title: "Kelas A", imagePath: "lib/assets/images/kelas_a.png", type: ItemType.kelas),
-    ItemModel(title: "Kelas B", imagePath: "lib/assets/images/kelas_b.png", type: ItemType.kelas),
-    ItemModel(title: "Kelas Lab B", imagePath: "lib/assets/images/kelas_lab_b.png", type: ItemType.kelas),
-    ItemModel(title: "Kelas Toddopuli", imagePath: "lib/assets/images/kelas_toddopuli.png", type: ItemType.kelas),
-    ItemModel(title: "Aula", imagePath: "lib/assets/images/aula.png", type: ItemType.kelas),
-  ];
+  final List<ItemModel> items = LocalData.items;
 
   @override
   Widget build(BuildContext context) {
@@ -145,19 +130,30 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                         ),
                         Expanded(
-                          flex: 4,
+                          flex: 5, 
                           child: Padding(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.only(
+                              right: 12,
+                              top: 16,
+                              bottom: 16,
+                            ),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFD8E7EA),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: primaryTeal),
+                                color: const Color(0xFFE3F2F4), // 🔥 lebih soft
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color: primaryTeal.withOpacity(0.4),
+                                  width: 1.2,
+                                ),
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
                                 children: _buildStatus(),
                               ),
                             ),
@@ -264,15 +260,36 @@ class _DashboardPageState extends State<DashboardPage> {
 class StatusRow extends StatelessWidget {
   final String number;
   final String label;
-  const StatusRow({super.key, required this.number, required this.label});
+
+  const StatusRow({
+    super.key,
+    required this.number,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(number, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF008996))),
-        const SizedBox(width: 12),
-        Text(label, style: const TextStyle(fontSize: 14)),
+        SizedBox(
+          width: 28, 
+          child: Text(
+            number,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF008996),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 14),
+            softWrap: true,
+          ),
+        ),
       ],
     );
   }
@@ -313,3 +330,4 @@ class WismaCard extends StatelessWidget {
     );
   }
 }
+

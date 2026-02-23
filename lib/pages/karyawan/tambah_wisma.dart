@@ -184,18 +184,16 @@ class _AddWismaPopUpState extends State<AddWismaPopUp> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        if (nameController.text
-                            .trim()
-                            .isEmpty) return;
+                        if (nameController.text.trim().isEmpty) return;
 
                         final newItem = ItemModel(
-                          title:
-                              nameController.text.trim(),
-                          imagePath: selectedImage !=
-                                  null
+                          title: nameController.text.trim(),
+                          description: descController.text.trim(), // TAMBAHKAN INI
+                          imagePath: selectedImage != null
                               ? selectedImage!.path
                               : "lib/assets/images/anggrek.jpg",
                           type: widget.type,
+                          rooms: [], // Inisialisasi list kosong
                         );
 
                         widget.onSave(newItem);

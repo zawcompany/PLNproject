@@ -6,8 +6,9 @@ class LocalData {
 
     ItemModel(
       title: "Wisma Bougenville",
-      imagePath: "lib/assets/images/Bougenville.jpg",
+      imagePath: "lib/assets/images/bougenville.jpg",
       type: ItemType.wisma,
+      description: "Wisma ini bertipe 70 dengan fasilitas lengkap.",
       rooms: [
         RoomModel(name: "Bougenville 1.1", capacity: 4, condition: RoomCondition.normal),
         RoomModel(name: "Bougenville 1.2", capacity: 4, condition: RoomCondition.normal),
@@ -31,8 +32,9 @@ class LocalData {
 
     ItemModel(
       title: "Wisma Cempaka",
-      imagePath: "lib/assets/images/Cempaka.jpg",
+      imagePath: "lib/assets/images/cempaka.png",
       type: ItemType.wisma,
+      description: "Wisma ini bertipe 70 dengan fasilitas lengkap.",
       rooms: [
         RoomModel(name: "Cempaka 1", capacity: 4, condition: RoomCondition.normal),
         RoomModel(name: "Cempaka 2", capacity: 4, condition: RoomCondition.normal),
@@ -50,8 +52,9 @@ class LocalData {
 
     ItemModel(
       title: "Wisma Dahlia",
-      imagePath: "lib/assets/images/Dahlia.jpg",
+      imagePath: "lib/assets/images/dahlia.png",
       type: ItemType.wisma,
+      description: "Wisma ini bertipe 70 dengan fasilitas lengkap.",
       rooms: [
         RoomModel(name: "Dahlia 1", capacity: 4, condition: RoomCondition.normal),
         RoomModel(name: "Dahlia 2", capacity: 4, condition: RoomCondition.normal),
@@ -69,8 +72,9 @@ class LocalData {
 
     ItemModel(
       title: "Wisma Edelweys",
-      imagePath: "lib/assets/images/Edelweys.jpg",
+      imagePath: "lib/assets/images/edelweis.png",
       type: ItemType.wisma,
+      description: "Wisma ini bertipe 70 dengan fasilitas lengkap.",
       rooms: [
         RoomModel(name: "Edelweys 1", capacity: 4, condition: RoomCondition.normal),
         RoomModel(name: "Edelweys 2", capacity: 4, condition: RoomCondition.normal),
@@ -88,8 +92,9 @@ class LocalData {
 
     ItemModel(
       title: "Wisma Flamboyan",
-      imagePath: "lib/assets/images/Flamboyan.jpg",
+      imagePath: "lib/assets/images/flamboyan.png",
       type: ItemType.wisma,
+      description: "Wisma ini bertipe 70 dengan fasilitas lengkap.",
       rooms: [
         RoomModel(name: "Flamboyan 1", capacity: 4, condition: RoomCondition.normal),
         RoomModel(name: "Flamboyan 2", capacity: 4, condition: RoomCondition.normal),
@@ -104,8 +109,9 @@ class LocalData {
 
     ItemModel(
       title: "Wisma Gladiol",
-      imagePath: "lib/assets/images/Gladiol.jpg",
+      imagePath: "lib/assets/images/gladiol.png",
       type: ItemType.wisma,
+      description: "Wisma ini bertipe 70 dengan fasilitas lengkap.",
       rooms: [
         RoomModel(name: "Gladiol 101", capacity: 4, condition: RoomCondition.normal),
         RoomModel(name: "Gladiol 102", capacity: 4, condition: RoomCondition.normal),
@@ -136,8 +142,9 @@ class LocalData {
 
     ItemModel(
       title: "Wisma Hortensia",
-      imagePath: "lib/assets/images/Hortensia.jpg",
+      imagePath: "lib/assets/images/hortensia.png",
       type: ItemType.wisma,
+      description: "Wisma ini bertipe 70 dengan fasilitas lengkap.",
       rooms: [
         RoomModel(name: "Hortensia 101", capacity: 4, condition: RoomCondition.normal),
         RoomModel(name: "Hortensia 102", capacity: 4, condition: RoomCondition.normal),
@@ -163,8 +170,9 @@ class LocalData {
    
     ItemModel(
       title: "Wisma Toddopuli",
-      imagePath: "lib/assets/images/Toddopuli.jpg",
+      imagePath: "lib/assets/images/toddopuli.png",
       type: ItemType.wisma,
+      description: "Wisma ini bertipe 70 dengan fasilitas lengkap.",
       rooms: [
         RoomModel(name: "Toddopuli Type 70 No. 1", capacity: 4, condition: RoomCondition.perluPerbaikan),
         RoomModel(name: "Toddopuli Type 70 No. 2", capacity: 4, condition: RoomCondition.perluPerbaikan),
@@ -176,8 +184,9 @@ class LocalData {
 
     ItemModel(
       title: "Kelas A",
-      imagePath: "lib/assets/images/kelas.jpg",
+      imagePath: "lib/assets/images/kelasA.png",
       type: ItemType.kelas,
+      description: "Kelas ini memiliki kapasitas 24 orang dan fasilitas beanbag.",
       rooms: [
         RoomModel(name: "Kelas A1", capacity: 24, condition: RoomCondition.normal),
         RoomModel(name: "Kelas A2", capacity: 10, condition: RoomCondition.normal),
@@ -192,8 +201,9 @@ class LocalData {
 
     ItemModel(
       title: "Kelas B",
-      imagePath: "lib/assets/images/kelas.jpg",
+      imagePath: "lib/assets/images/kelasB.png",
       type: ItemType.kelas,
+      description: "Kelas ini memiliki kapasitas 24 orang dan fasilitas beanbag.",
       rooms: [
         RoomModel(name: "Kelas B1", capacity: 16, condition: RoomCondition.normal),
         RoomModel(name: "Kelas B2", capacity: 14, condition: RoomCondition.normal),
@@ -206,8 +216,9 @@ class LocalData {
 
     ItemModel(
       title: "Kelas Lab B",
-      imagePath: "lib/assets/images/kelas_lab_b.jpg",
+      imagePath: "lib/assets/images/kelas_lab_b.png",
       type: ItemType.kelas,
+      description: "Kelas ini memiliki kapasitas 24 orang dan fasilitas beanbag.",
       rooms: [
         RoomModel(name: "Lab B", capacity: 24, condition: RoomCondition.normal),
       ],
@@ -215,8 +226,9 @@ class LocalData {
 
     ItemModel(
       title: "Aula",
-      imagePath: "lib/assets/images/aula.jpg",
+      imagePath: "lib/assets/images/aula.png",
       type: ItemType.kelas,
+      description: "Kelas ini memiliki kapasitas 24 orang dan fasilitas beanbag.",
       rooms: [
         RoomModel(name: "Aula", capacity: 100, condition: RoomCondition.normal),
       ],
@@ -224,8 +236,9 @@ class LocalData {
 
     ItemModel(
       title: "Kelas Toddopuli",
-      imagePath: "lib/assets/images/kelas_toddopuli.jpg",
+      imagePath: "lib/assets/images/kelas_toddopuli.png",
       type: ItemType.kelas,
+      description: "Kelas ini memiliki kapasitas 24 orang dan fasilitas beanbag.",
       rooms: [
         RoomModel(name: "Kelas Toddopuli", capacity: 24, condition: RoomCondition.perluPerbaikan),
       ],
