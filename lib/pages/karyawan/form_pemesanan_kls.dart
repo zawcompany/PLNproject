@@ -33,8 +33,7 @@ class _FormKelasPageState extends State<FormKelasPage> {
 
   DateTimeRange? selectedDate;
   File? suratTugas;
-  RoomModel? recommendedRoom; // Untuk menyimpan rekomendasi kelas lain
-
+  RoomModel? recommendedRoom; 
   @override
   void dispose() {
     namaController.dispose();
