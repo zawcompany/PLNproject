@@ -3,7 +3,9 @@ import '../../models/item_model.dart';
 import '../../models/room_model.dart';
 import '../../data/booking_data.dart';
 import '../form_komplain.dart';
+import 'form_pemesanan_eks.dart';
 import 'form_pemesanan_int.dart';
+import 'form_pemesanan_kls.dart';
 
 bool isRoomUsed(RoomModel room) {
   final now = DateTime.now();
@@ -39,9 +41,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () async {
-                      Navigator.pop(context); // Tutup dialog
-                      
-                      // Navigasi ke Form Internal dan tunggu hasilnya
+                      Navigator.pop(context); 
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -52,7 +52,6 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                         ),
                       );
 
-                      // Jika kembali dengan nilai true (berhasil pesan)
                       if (result == true) {
                         _showSuccessSnackBar("Pesanan internal berhasil dikirim");
                       }
@@ -67,9 +66,21 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.pop(context);
-                      // TODO: Navigasi ke Form Eksternal (mirip logic internal di atas)
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FormWismaEksternalPage(
+                            room: room, 
+                            item: widget.item
+                          ),
+                        ),
+                      );
+
+                      if (result == true) {
+                        _showSuccessSnackBar("Pesanan eksternal berhasil dikirim");
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF008996),
@@ -120,13 +131,6 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
   int selectedTab = 0;
   late List<RoomModel> rooms;
 
-  Color getStatusColor(RoomModel room, bool isKelas) {
-    final used = isRoomUsed(room);
-    if (room.condition == RoomCondition.dalamPerbaikan) return Colors.red;
-    if (room.condition == RoomCondition.perluPerbaikan) return Colors.orange;
-    return used ? Colors.blue : Colors.green;
-  }
-
   List<String> getTabs(bool isKelas) {
     if (isKelas) {
       return ["Digunakan", "Kosong", "Perlu Perbaikan"];
@@ -168,12 +172,12 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
         break;
       case 1:
         icon = Icons.payments_outlined;
-        text = "Rp250.000";
+        text = room.name.toLowerCase().contains("hortensia") ? "Rp2.500.000" : "Rp250.000";
         break;
       case 2:
       case 3:
         icon = Icons.error_outline;
-        text = "Masalah: Lampu Mati";
+        text = "Lapor Kerusakan";
         break;
       default:
         icon = Icons.people_outline;
@@ -215,20 +219,22 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
           _buildTabs(isKelas),
           const SizedBox(height: 10),
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 14,
-                mainAxisSpacing: 14,
-                childAspectRatio: 0.73,
-              ),
-              itemCount: filteredRooms.length,
-              itemBuilder: (context, index) {
-                final room = filteredRooms[index];
-                return _buildRoomCard(room, isKelas);
-              },
-            ),
+            child: filteredRooms.isEmpty 
+              ? Center(child: Text("Tidak ada data ${getTabs(isKelas)[selectedTab]}", style: const TextStyle(color: Colors.grey)))
+              : GridView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 14,
+                    mainAxisSpacing: 14,
+                    childAspectRatio: 0.72,
+                  ),
+                  itemCount: filteredRooms.length,
+                  itemBuilder: (context, index) {
+                    final room = filteredRooms[index];
+                    return _buildRoomCard(room, isKelas);
+                  },
+                ),
           ),
         ],
       ),
@@ -303,7 +309,6 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
     final tabs = getTabs(isKelas);
     return SizedBox(
       height: 40,
-      width: double.infinity,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
@@ -313,7 +318,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
             return GestureDetector(
               onTap: () => setState(() => selectedTab = index),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 2), 
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4), 
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
@@ -343,7 +348,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         color: Colors.white,
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,13 +368,13 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                   child: GestureDetector(
                     onTap: () => _showComplaintDialog(room),
                     child: Container(
-                      padding: const EdgeInsets.all(4),
+                      padding: const EdgeInsets.all(5),
                       decoration: const BoxDecoration(
                         color: Color(0xFF008996),
                         shape: BoxShape.circle,
                         boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
                       ),
-                      child: const Icon(Icons.priority_high, color: Colors.white, size: 18),
+                      child: const Icon(Icons.priority_high, color: Colors.white, size: 16),
                     ),
                   ),
                 ),
@@ -377,38 +382,51 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   room.name, 
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
                 _buildRoomSubtitle(room),
                 if (selectedTab == 1) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   SizedBox(
                     width: double.infinity,
-                    height: 28,
+                    height: 30,
                     child: ElevatedButton(
                       onPressed: () async {
-                        if (widget.item.type == ItemType.wisma) {
-                          _showBookingTypeDialog(room);
-                        } else {
-                          // TODO: Navigasi ke Form Kelas langsung
-                          // final result = await Navigator.push(...)
-                        }
-                      },
+                          if (widget.item.type == ItemType.wisma) {
+                            _showBookingTypeDialog(room);
+                          } else {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FormKelasPage( // Sesuaikan nama class form kelas Anda
+                                  room: room,
+                                  item: widget.item,
+                                ),
+                              ),
+                            );
+
+                            // Jika berhasil pesan dan kembali dengan nilai true
+                            if (result == true) {
+                              _showSuccessSnackBar("Permohonan peminjaman kelas berhasil dikirim");
+                            }
+                          }
+                        },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF008996),
+                        elevation: 0,
                         padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      child: const Text("Pesan", style: TextStyle(color: Colors.white, fontSize: 11)),
+                      child: const Text("Pesan", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],

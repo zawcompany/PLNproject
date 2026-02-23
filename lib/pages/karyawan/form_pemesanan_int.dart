@@ -22,7 +22,6 @@ class FormWismaInternalPage extends StatefulWidget {
 class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Definisi warna
   static const Color softTeal = Color(0xFFE8F1F3);
   static const Color primaryTeal = Color(0xFF008996);
 
@@ -33,7 +32,7 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
   final lakiController = TextEditingController(text: '0');
 
   DateTimeRange? selectedDate;
-  File? buktiPembayaran;
+  File? suratTugas;
 
   final currency = NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0);
 
@@ -67,35 +66,30 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F8),
-      // MENGGUNAKAN PREFERREDSIZE UNTUK MEMPERBESAR TOP BAR
+      backgroundColor: Colors.white, 
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80.0), // Tinggi Top Bar diperbesar menjadi 80
+        preferredSize: const Size.fromHeight(80.0),
         child: AppBar(
           backgroundColor: softTeal, 
           elevation: 0,
           centerTitle: false,
           leading: Padding(
-            padding: const EdgeInsets.only(top: 10), // Menyesuaikan posisi icon back
+            padding: const EdgeInsets.only(top: 10),
             child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black), // Panah warna hitam
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
               onPressed: () => Navigator.pop(context),
             ),
           ),
           titleSpacing: 0,
-          title: Padding(
-            padding: const EdgeInsets.only(top: 15), // Menyesuaikan posisi teks ke bawah
+          title: const Padding(
+            padding: EdgeInsets.only(top: 15),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
+              children: [
                 Text(
                   "Pemesanan Internal", 
-                  style: TextStyle(
-                    fontSize: 20, // Ukuran teks judul diperbesar
-                    fontWeight: FontWeight.bold, 
-                    color: Colors.black // Teks judul warna hitam
-                  )
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)
                 ),
                 Text(
                   "Lengkapi data pemesanan wisma", 
@@ -107,59 +101,54 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 24),
+              const SizedBox(height: 30),
               _buildField("Nama Lengkap", namaController, Icons.person_outline),
               _buildField("Nomor Induk Karyawan (NIK)", nikController, Icons.badge_outlined, TextInputType.number),
               _buildField("Nomor Induk Pegawai (NIP)", nipController, Icons.work_outline, TextInputType.number, false),
-
+              
+              _buildUploadBox("Unggah Surat Tugas", suratTugas != null, _pickSurat),
+              
+              const SizedBox(height: 30),
               const Text("Jumlah Tamu", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(child: _buildField("Perempuan", perempuanController, Icons.female_outlined, TextInputType.number)),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 16),
                   Expanded(child: _buildField("Laki-laki", lakiController, Icons.male_outlined, TextInputType.number)),
                 ],
               ),
 
               _buildDateRangeField(),
-              const SizedBox(height: 22),
+              const SizedBox(height: 24),
               _buildTotalCard(),
 
-              if (totalHarga > 0) ...[
-                const SizedBox(height: 22),
-                _buildRekeningCard(),
-                const SizedBox(height: 16),
-                _buildUploadBukti(),
-              ],
+              // SEKSI PEMBAYARAN (NOREK & BUKTI TF) SUDAH DIHAPUS DARI SINI
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 55,
                 child: ElevatedButton(
-                  onPressed: (buktiPembayaran != null) ? _submitForm : null,
+                  onPressed: _submitForm,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryTeal,
-                    disabledBackgroundColor: Colors.grey[300],
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
                   ),
-                  child: Text(
+                  child: const Text(
                     "Pesan Sekarang",
-                    style: TextStyle(
-                      color: buktiPembayaran != null ? Colors.white : Colors.grey[600], 
-                      fontWeight: FontWeight.bold
-                    ),
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 50),
             ],
           ),
         ),
@@ -169,11 +158,11 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
 
   Widget _buildField(String label, TextEditingController controller, IconData icon, [TextInputType type = TextInputType.text, bool isRequired = true]) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.only(bottom: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87)),
           const SizedBox(height: 8),
           TextFormField(
             controller: controller,
@@ -183,15 +172,62 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
               return null;
             },
             decoration: InputDecoration(
-              prefixIcon: Icon(icon, size: 18, color: Colors.grey), // Ikon dalam field warna abu-abu
+              prefixIcon: Icon(icon, size: 18, color: Colors.grey[600]),
               filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFDADADA))),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFDADADA))),
+              fillColor: const Color(0xFFF5F5F5),
+              contentPadding: const EdgeInsets.symmetric(vertical: 16),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildUploadBox(String label, bool isFileSelected, VoidCallback onTap) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87)),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: double.infinity,
+            height: 55,
+            decoration: BoxDecoration(
+              color: isFileSelected ? const Color(0xFFE8F5E9) : const Color(0xFFF5F5F5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(
+                  isFileSelected ? Icons.check_circle : Icons.file_upload_outlined, 
+                  color: isFileSelected ? Colors.green : Colors.grey[600],
+                  size: 24,
+                ),
+                if (isFileSelected)
+                  const Positioned(
+                    right: 16,
+                    child: Text(
+                      "Berhasil ✔",
+                      style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -204,20 +240,20 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
         InkWell(
           onTap: _pickDateRange,
           child: Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFDADADA)),
+              color: const Color(0xFFF5F5F5),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
-                const Icon(Icons.calendar_month, color: Colors.grey), // Ikon tanggal warna abu-abu
+                Icon(Icons.calendar_month, color: Colors.grey[600], size: 18),
                 const SizedBox(width: 12),
                 Text(
                   selectedDate == null 
                   ? "Pilih Tanggal" 
                   : "${DateFormat('dd/MM/yyyy').format(selectedDate!.start)} - ${DateFormat('dd/MM/yyyy').format(selectedDate!.end)}",
+                  style: const TextStyle(fontSize: 14),
                 ),
               ],
             ),
@@ -229,47 +265,20 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
 
   Widget _buildTotalCard() {
     return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(color: softTeal, borderRadius: BorderRadius.circular(16)),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: softTeal, 
+        borderRadius: BorderRadius.circular(16)
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text("Total Pembayaran", style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text("Total Pembayaran", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           Text(
             currency.format(totalHarga), 
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: primaryTeal)
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: primaryTeal)
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildRekeningCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
-      child: const Text("Bank BRI\n033901000171301\nReceipt PT. PLN", style: TextStyle(fontSize: 12, height: 1.5)),
-    );
-  }
-
-  Widget _buildUploadBukti() {
-    return InkWell(
-      onTap: _pickImage,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: buktiPembayaran != null ? Colors.green[50] : const Color(0xFFF0F0F0),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: buktiPembayaran != null ? Colors.green : Colors.transparent),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.upload_file, color: buktiPembayaran != null ? Colors.green : Colors.grey),
-            const SizedBox(width: 10),
-            Expanded(child: Text(buktiPembayaran != null ? "Bukti Terunggah" : "Unggah Bukti Pembayaran")),
-          ],
-        ),
       ),
     );
   }
@@ -284,11 +293,11 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
     if (picked != null) setState(() => selectedDate = picked);
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickSurat() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (picked != null) {
       setState(() {
-        buktiPembayaran = File(picked.path);
+        suratTugas = File(picked.path);
       });
     }
   }
