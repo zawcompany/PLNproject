@@ -14,6 +14,8 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   static const Color primaryTeal = Color(0xFF008996);
+  static const Color softTeal = Color(0xFFE8F1F3); // Warna roundbox dropdown
+  
   ItemType selectedMenu = ItemType.wisma;
   final List<ItemModel> items = LocalData.items;
 
@@ -23,31 +25,67 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
+      // --- PENAMBAHAN TOP BAR ---
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70.0),
+        child: AppBar(
+          backgroundColor: softTeal,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          title: Padding(
+            padding: const EdgeInsets.only(top: 10, left: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Selamat Datang,",
+                      style: TextStyle(fontSize: 14, color: Colors.black54),
+                    ),
+                    Text(
+                      "User PLN",
+                      style: TextStyle(
+                        fontSize: 18, 
+                        fontWeight: FontWeight.bold, 
+                        color: Colors.black
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.notifications_none, color: primaryTeal),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text("Selamat Datang, User", style: TextStyle(fontSize: 16)),
-                  Icon(Icons.notifications_none)
-                ],
-              ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 15),
+              // Dropdown Menu
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F1F3),
+                  color: softTeal, // Menggunakan warna softTeal yang sama
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<ItemType>(
                     value: selectedMenu,
-                    icon: const Icon(Icons.keyboard_arrow_down),
+                    icon: const Icon(Icons.keyboard_arrow_down, color: primaryTeal),
                     items: ItemType.values.map((type) {
                       return DropdownMenuItem(
                         value: type,
@@ -143,7 +181,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 vertical: 12,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE3F2F4), // 🔥 lebih soft
+                                color: const Color(0xFFE3F2F4),
                                 borderRadius: BorderRadius.circular(18),
                                 border: Border.all(
                                   color: primaryTeal.withOpacity(0.4),
@@ -165,22 +203,13 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
               const SizedBox(height: 25),
-
-              // --- PEMBATAS / DIVIDER ---
-              const Divider(
-                color: Colors.black12,
-                thickness: 1,
-              ),
+              const Divider(color: Colors.black12, thickness: 1),
               const SizedBox(height: 15),
-
-              // Bagian Judul
               Text(
                 selectedMenu == ItemType.wisma ? "Jenis Wisma" : "Jenis Kelas",
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: primaryTeal),
               ),
               const SizedBox(height: 15),
-              
-              // Grid View
               Expanded(
                 child: GridView.builder(
                   itemCount: filteredItems.length,
@@ -200,17 +229,11 @@ class _DashboardPageState extends State<DashboardPage> {
                           context,
                           MaterialPageRoute(builder: (_) => DetailKelasPage(item: item)),
                         );
-
                         if (!mounted) return;
-
                         if (result == true) {
                           setState(() {
                             item.isDone = true;
                           });
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("${item.title} selesai ✔")),
-                          );
                         }
                       },
                     );

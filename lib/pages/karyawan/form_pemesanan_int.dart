@@ -22,6 +22,10 @@ class FormWismaInternalPage extends StatefulWidget {
 class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
   final _formKey = GlobalKey<FormState>();
 
+  // Definisi warna
+  static const Color softTeal = Color(0xFFE8F1F3);
+  static const Color primaryTeal = Color(0xFF008996);
+
   final namaController = TextEditingController();
   final nikController = TextEditingController();
   final nipController = TextEditingController();
@@ -33,11 +37,8 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
 
   final currency = NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0);
 
-  // ================== PERBAIKAN LOGIC TOTAL HARGA ==================
   int get totalHarga {
     if (selectedDate == null) return 0;
-
-    // Hitung total hari menginap
     final totalDays = selectedDate!.end.difference(selectedDate!.start).inDays + 1;
     
     const int hargaHarian = 250000;
@@ -46,15 +47,10 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
         : 750000;
 
     if (totalDays >= 30) {
-      // Hitung berapa bulan (1 bulan dianggap per 30 hari)
       int jumlahBulan = totalDays ~/ 30;
-      // Hitung sisa hari
       int sisaHari = totalDays % 30;
-
       return (jumlahBulan * hargaBulanan) + (sisaHari * hargaHarian);
     }
-
-    // Jika di bawah 30 hari, hitung harian biasa
     return totalDays * hargaHarian;
   }
 
@@ -72,15 +68,42 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6F8),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF008996),
-        elevation: 0,
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Pemesanan Internal", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-            Text("Lengkapi data pemesanan wisma", style: TextStyle(fontSize: 12, color: Colors.white70)),
-          ],
+      // MENGGUNAKAN PREFERREDSIZE UNTUK MEMPERBESAR TOP BAR
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(80.0), // Tinggi Top Bar diperbesar menjadi 80
+        child: AppBar(
+          backgroundColor: softTeal, 
+          elevation: 0,
+          centerTitle: false,
+          leading: Padding(
+            padding: const EdgeInsets.only(top: 10), // Menyesuaikan posisi icon back
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black), // Panah warna hitam
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          titleSpacing: 0,
+          title: Padding(
+            padding: const EdgeInsets.only(top: 15), // Menyesuaikan posisi teks ke bawah
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Text(
+                  "Pemesanan Internal", 
+                  style: TextStyle(
+                    fontSize: 20, // Ukuran teks judul diperbesar
+                    fontWeight: FontWeight.bold, 
+                    color: Colors.black // Teks judul warna hitam
+                  )
+                ),
+                Text(
+                  "Lengkapi data pemesanan wisma", 
+                  style: TextStyle(fontSize: 13, color: Colors.black54)
+                ),
+              ],
+            ),
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -123,7 +146,7 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
                 child: ElevatedButton(
                   onPressed: (buktiPembayaran != null) ? _submitForm : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF008996),
+                    backgroundColor: primaryTeal,
                     disabledBackgroundColor: Colors.grey[300],
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
@@ -160,7 +183,7 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
               return null;
             },
             decoration: InputDecoration(
-              prefixIcon: Icon(icon, size: 18),
+              prefixIcon: Icon(icon, size: 18, color: Colors.grey), // Ikon dalam field warna abu-abu
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFDADADA))),
@@ -189,7 +212,7 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.calendar_month, color: Color(0xFF008996)),
+                const Icon(Icons.calendar_month, color: Colors.grey), // Ikon tanggal warna abu-abu
                 const SizedBox(width: 12),
                 Text(
                   selectedDate == null 
@@ -207,14 +230,14 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
   Widget _buildTotalCard() {
     return Container(
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(color: const Color(0xFFE4F4F6), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: softTeal, borderRadius: BorderRadius.circular(16)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text("Total Pembayaran", style: TextStyle(fontWeight: FontWeight.bold)),
           Text(
             currency.format(totalHarga), 
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF008996))
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: primaryTeal)
           ),
         ],
       ),
@@ -255,7 +278,8 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
     final picked = await showDateRangePicker(
       context: context, 
       firstDate: DateTime.now(), 
-      lastDate: DateTime(2030)
+      lastDate: DateTime(2030),
+      locale: const Locale('id', 'ID'),
     );
     if (picked != null) setState(() => selectedDate = picked);
   }

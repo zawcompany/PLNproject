@@ -5,29 +5,29 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.11.0
+  sdk: '>=3.0.0 <4.0.0' # Menggunakan rentang yang lebih aman
+
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations: 
     sdk: flutter
   flutter_svg: ^2.0.10
   image_picker: ^1.0.7
   cupertino_icons: ^1.0.8
   url_launcher: ^6.3.1
-  carousel_slider: ^5.0.0
+  carousel_slider: ^5.0.0 
   firebase_core: ^2.27.0
   firebase_auth: ^4.17.0
   cloud_firestore: ^4.15.0
-  intl: ^0.18.1
-
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
-
+  flutter_lints: ^3.0.0 
 
 flutter:
   uses-material-design: true
   assets:
-    - lib/assets/images/welcome_pict.svg
-    - lib/assets/images/
+    - lib/assets/images/ 
