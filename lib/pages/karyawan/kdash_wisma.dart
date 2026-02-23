@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'detail_kelas.dart';
+import 'detail.dart';
 import '../../models/item_model.dart';
 import 'package:monitoring_app/widgets/navbar.dart';
 import '../../data/exsistingdata.dart';

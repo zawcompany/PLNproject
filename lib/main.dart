@@ -35,7 +35,8 @@ class MyApp extends StatelessWidget {
           seedColor: const Color(0xFF008996),
         ),
       ),
-      home: const WelcomePage(),
+      // home: const WelcomePage(),
+      home: const DashboardPage(),
       routes: {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
