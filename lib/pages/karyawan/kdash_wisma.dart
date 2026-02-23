@@ -14,7 +14,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   static const Color primaryTeal = Color(0xFF008996);
-  static const Color softTeal = Color(0xFFE8F1F3); // Warna roundbox dropdown
+  static const Color softTeal = Color(0xFFE8F1F3);
   
   ItemType selectedMenu = ItemType.wisma;
   final List<ItemModel> items = LocalData.items;
@@ -25,7 +25,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      // --- PENAMBAHAN TOP BAR ---
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70.0),
         child: AppBar(
@@ -79,7 +78,7 @@ class _DashboardPageState extends State<DashboardPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: softTeal, // Menggunakan warna softTeal yang sama
+                  color: softTeal, 
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: DropdownButtonHideUnderline(
