@@ -3,10 +3,10 @@ import '../../models/item_model.dart';
 import '../../models/room_model.dart';
 import '../../data/booking_data.dart';
 import '../form_komplain.dart';
+import 'form_pemesanan_int.dart';
 
 bool isRoomUsed(RoomModel room) {
   final now = DateTime.now();
-
   return BookingData.bookings.any((b) =>
       b.roomName == room.name &&
       now.isAfter(b.start) &&
@@ -15,7 +15,6 @@ bool isRoomUsed(RoomModel room) {
 
 class DetailKelasPage extends StatefulWidget {
   final ItemModel item;
-
   const DetailKelasPage({super.key, required this.item});
 
   @override
@@ -23,6 +22,80 @@ class DetailKelasPage extends StatefulWidget {
 }
 
 class _DetailKelasPageState extends State<DetailKelasPage> {
+  // POP UP PEMILIHAN JENIS PESANAN (KHUSUS WISMA)
+  void _showBookingTypeDialog(RoomModel room) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text("Jenis Pesanan", 
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        content: const Text("Silahkan pilih kategori pemesanan untuk wisma ini:"),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      Navigator.pop(context); // Tutup dialog
+                      
+                      // Navigasi ke Form Internal dan tunggu hasilnya
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FormWismaInternalPage(
+                            room: room, 
+                            item: widget.item
+                          ),
+                        ),
+                      );
+
+                      // Jika kembali dengan nilai true (berhasil pesan)
+                      if (result == true) {
+                        _showSuccessSnackBar("Pesanan internal berhasil dikirim");
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFF008996)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text("Internal", style: TextStyle(color: Color(0xFF008996))),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      // TODO: Navigasi ke Form Eksternal (mirip logic internal di atas)
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF008996),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text("Eksternal", style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   void _showComplaintDialog(RoomModel room) {
     showDialog(
       context: context,
@@ -31,7 +104,6 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
         onSubmitted: (newCondition, issues, detail) {
           setState(() {
             room.condition = newCondition;
-            // Di sini kamu bisa simpan data 'issues' dan 'detail' ke database/state
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -294,7 +366,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
                         color: Color(0xFF008996),
-                        shape: BoxShape.circle, // PERBAIKAN: BoxType -> BoxShape
+                        shape: BoxShape.circle,
                         boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
                       ),
                       child: const Icon(Icons.priority_high, color: Colors.white, size: 18),
@@ -323,7 +395,14 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                     width: double.infinity,
                     height: 28,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () async {
+                        if (widget.item.type == ItemType.wisma) {
+                          _showBookingTypeDialog(room);
+                        } else {
+                          // TODO: Navigasi ke Form Kelas langsung
+                          // final result = await Navigator.push(...)
+                        }
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF008996),
                         padding: EdgeInsets.zero,

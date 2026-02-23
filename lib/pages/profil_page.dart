@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:url_launcher/url_launcher.dart'; // Tambahkan package url_launcher
+import 'package:url_launcher/url_launcher.dart'; 
 import '../widgets/navbar.dart';
 
 
@@ -83,49 +83,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 15),
-                  _buildUserInfo(),
-                  const SizedBox(height: 30),
-                  _buildMenuButtons(),
-                ],
-              ),
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.white,
+    body: isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildHeader(),     // Sekarang berisi Background + Foto
+                _buildUserInfo(),   // Berisi Nama + Email dengan padding atas
+                const SizedBox(height: 30),
+                _buildMenuButtons(),
+              ],
             ),
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: 2,
-        onTap: _handleNavigation,
-      ),
-    );
-  }
+          ),
+    bottomNavigationBar: CustomBottomNav(
+      currentIndex: 2,
+      onTap: _handleNavigation,
+    ),
+  );
+}
 
   Widget _buildHeader() {
-    return SizedBox(
-      width: double.infinity,
-      height: 220, // Disamakan ukurannya dengan RiwayatPage (220)
-      child: SvgPicture.asset(
-        'lib/assets/images/header_riwayat.svg',
-        fit: BoxFit.cover,
-      ),
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none, // Agar foto profil bisa keluar dari batas box header
+      children: [
+        // 1. Gambar Background Header
+        SizedBox(
+          width: double.infinity,
+          height: 220, // Tinggi background diperpendek sedikit
+          child: SvgPicture.asset(
+            'lib/assets/images/header_riwayat.svg',
+            fit: BoxFit.cover,
+          ),
+        ),
+        // 2. Foto Profil (Menimpa)
+        Positioned(
+          bottom: -40, // Menggeser foto setengah keluar dari header (radius 40)
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 4), // Frame putih
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 40,
+              backgroundColor: const Color(0xFFE0E6E6),
+              // Jika ada foto dari Firestore, bisa ditaruh di sini
+              child: const Icon(Icons.person, size: 50, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildUserInfo() {
     return Column(
       children: [
-        const CircleAvatar(
-          radius: 40,
-          backgroundColor: Color(0xFFE0E6E6),
-          child: Icon(Icons.person, size: 50, color: Colors.white),
-        ),
-        const SizedBox(height: 15),
+        const SizedBox(height: 50), // Jarak agar teks tidak tertabrak foto profil yang menimpa
         Text(
           name, 
           style: TextStyle(
@@ -134,10 +158,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             color: primaryColor
           )
         ),
+        const SizedBox(height: 4),
         Text(email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
       ],
     );
   }
+
   Widget _buildMenuButtons() {
     return Column(
       children: [

@@ -28,14 +28,15 @@ class _RiwayatPageState extends State<RiwayatPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildFilterLabel("Jenis Wisma"),
-                _buildSimpleDropdown(["Semua Wisma", "Anggrek", "Cempaka", "Bougenville", "Dahlia", "Edelweiss", "Flamboyan", "Gladiol", "Hortensia", "Toddopuli"]),
+                _buildFilterLabel("Pilih Wisma"),
+                _buildSimpleDropdown([
+                  "Semua Wisma", "Anggrek", "Cempaka", "Bougenville", 
+                  "Dahlia", "Edelweiss", "Flamboyan", "Gladiol", 
+                  "Hortensia", "Toddopuli"
+                ]),
                 const SizedBox(height: 15),
-                _buildFilterLabel("Jenis Kelas"),
-                _buildSimpleDropdown(["Semua Kelas", "Kelas A", "Kelas B", "Lab B", "Aula", "Kelas Toddopuli"]),
-                const SizedBox(height: 15),
-                _buildFilterLabel("Status"),
-                _buildSimpleDropdown(["Semua Status", "Menunggu Konfirmasi", "Telah Dikonfirmasi"]),
+                _buildFilterLabel("Status Pesanan"),
+                _buildSimpleDropdown(["Semua Status", "Menunggu Konfirmasi", "Dikonfirmasi", "Dibatalkan"]),
               ],
             ),
           ),
@@ -139,7 +140,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
             "Riwayat Pemesanan",
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor),
           ),
-          // Tombol Ikon Filter
           GestureDetector(
             onTap: _showFilterDialog,
             child: Container(
@@ -157,29 +157,37 @@ class _RiwayatPageState extends State<RiwayatPage> {
   }
 
   Widget _buildHistoryList() {
-    // Data contoh pemesanan
+    // Data Riwayat yang disesuaikan dengan Wisma dan Nama Kamar
     final List<Map<String, dynamic>> riwayatItems = [
       {
-        "title": "Anggrek",
-        "detail": "Kamar No. 12 (Wisma)",
+        "title": "Wisma Hortensia",
+        "detail": "Kamar VIP Hortensia 01",
         "date": "12 Feb 2026",
         "bookDate": "25 Feb - 27 Feb 2026",
         "status": "Dikonfirmasi",
         "isSelesai": true
       },
       {
-        "title": "Kelas A",
-        "detail": "Lantai 2 (Gedung Utama)",
+        "title": "Wisma Toddopuli",
+        "detail": "Kamar Toddopuli 10",
         "date": "10 Feb 2026",
-        "bookDate": "01 Mar 2026",
+        "bookDate": "01 Mar - 05 Mar 2026",
         "status": "Menunggu",
         "isSelesai": false
       },
       {
-        "title": "Toddopuli",
-        "detail": "Kamar No. 05 (Wisma)",
+        "title": "Wisma Anggrek",
+        "detail": "Kamar Anggrek 05",
         "date": "05 Feb 2026",
         "bookDate": "15 Feb - 16 Feb 2026",
+        "status": "Dikonfirmasi",
+        "isSelesai": true
+      },
+      {
+        "title": "Wisma Cempaka",
+        "detail": "Kamar Cempaka 03",
+        "date": "01 Feb 2026",
+        "bookDate": "10 Feb - 12 Feb 2026",
         "status": "Dikonfirmasi",
         "isSelesai": true
       },
@@ -198,7 +206,11 @@ class _RiwayatPageState extends State<RiwayatPage> {
             borderRadius: BorderRadius.circular(15),
             border: Border.all(color: const Color(0xFFF0F4F4)),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05), 
+                blurRadius: 10, 
+                offset: const Offset(0, 4)
+              ),
             ],
           ),
           child: Column(
@@ -207,12 +219,26 @@ class _RiwayatPageState extends State<RiwayatPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(item['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  Text(item['date'], style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                  Text(
+                    item['title'], 
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)
+                  ),
+                  Text(
+                    item['date'], 
+                    style: const TextStyle(color: Colors.grey, fontSize: 10)
+                  ),
                 ],
               ),
               const SizedBox(height: 4),
-              Text(item['detail'], style: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.w500)),
+              // Nama Kamar menggunakan Primary Color
+              Text(
+                item['detail'], 
+                style: TextStyle(
+                  color: primaryColor, 
+                  fontSize: 12, 
+                  fontWeight: FontWeight.bold // Dibuat tebal agar lebih jelas
+                )
+              ),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),
                 child: Divider(height: 1, color: Color(0xFFF0F4F4)),
@@ -224,7 +250,10 @@ class _RiwayatPageState extends State<RiwayatPage> {
                     children: [
                       Icon(Icons.calendar_today_outlined, size: 14, color: primaryColor),
                       const SizedBox(width: 6),
-                      Text(item['bookDate'], style: const TextStyle(fontSize: 11, color: Colors.black87)),
+                      Text(
+                        item['bookDate'], 
+                        style: const TextStyle(fontSize: 11, color: Colors.black87)
+                      ),
                     ],
                   ),
                   Container(
