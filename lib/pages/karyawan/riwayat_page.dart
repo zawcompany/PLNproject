@@ -122,7 +122,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
   Widget _buildHeader() {
     return SizedBox(
       width: double.infinity,
-      height: 220,
+      height: 120,
       child: SvgPicture.asset(
         'lib/assets/images/header_riwayat.svg',
         fit: BoxFit.cover,

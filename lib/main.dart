@@ -52,11 +52,11 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
-        '/approval_dash': (context) => DashApproval(),      // Dashboard Approval
-        '/riwayat_staff': (context) => const RiwayatPage(),       // Riwayat Karyawan
+        '/approval_dash': (context) => DashApproval(),      
+        '/riwayat_staff': (context) => const RiwayatPage(),      
         '/riwayat_approval': (context) => const RiwayatApprovalPage(), 
         '/profil': (context) => const ProfileScreen(),
-        '/staff_dash': (context) => const DashboardAlternative(), // Dashboard Staff
+        '/staff_dash': (context) => const DashboardAlternative(),
       },
     );
   }

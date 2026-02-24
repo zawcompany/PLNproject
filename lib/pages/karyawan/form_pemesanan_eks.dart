@@ -126,7 +126,7 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
                       const SizedBox(height: 25),
                       
                       _buildField("Nama Lengkap", namaController, Icons.person_outline),
-                      _buildField("Nomor Induk Keluarga (NIK)", nikController, Icons.badge_outlined, TextInputType.number),
+                      _buildField("Nomor Induk Kependudukan (NIK)", nikController, Icons.badge_outlined, TextInputType.number),
                       _buildField("Nomor Induk Pegawai (NIK)", nipController, Icons.work_outline, TextInputType.number, false),
                       _buildField("Alamat", alamatController, Icons.home_outlined),
                       _buildField("Nomor NPWP", npwpController, Icons.assignment_outlined, TextInputType.number),

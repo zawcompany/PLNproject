@@ -122,7 +122,7 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
                       const SizedBox(height: 25),
                       
                       _buildField("Nama Lengkap", namaController, Icons.person_outline),
-                      _buildField("Nomor Induk Karyawan (NIK)", nikController, Icons.badge_outlined, TextInputType.number),
+                      _buildField("Nomor Induk Kependudukan (NIK)", nikController, Icons.badge_outlined, TextInputType.number),
                       _buildField("Nomor Induk Pegawai (NIP)", nipController, Icons.work_outline, TextInputType.number, false),
                       
                       _buildUploadBox("Unggah Surat Tugas", suratTugas != null, _pickSurat),

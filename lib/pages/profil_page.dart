@@ -112,7 +112,7 @@ Widget build(BuildContext context) {
         // Gambar Background Header
         SizedBox(
           width: double.infinity,
-          height: 220, 
+          height: 120, 
           child: SvgPicture.asset(
             'lib/assets/images/header_riwayat.svg',
             fit: BoxFit.cover,
@@ -120,7 +120,7 @@ Widget build(BuildContext context) {
         ),
         // Foto profil
         Positioned(
-          bottom: -40, 
+          bottom: -120, 
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -134,9 +134,9 @@ Widget build(BuildContext context) {
               ],
             ),
             child: CircleAvatar(
-              radius: 40,
+              radius: 50, 
               backgroundColor: const Color(0xFFE0E6E6),
-              child: const Icon(Icons.person, size: 50, color: Colors.white),
+              child: const Icon(Icons.person, size: 65, color: Colors.white), // Ikon juga diperbesar
             ),
           ),
         ),
@@ -147,7 +147,7 @@ Widget build(BuildContext context) {
   Widget _buildUserInfo() {
     return Column(
       children: [
-        const SizedBox(height: 50), 
+        const SizedBox(height: 132), 
         Text(
           name, 
           style: TextStyle(

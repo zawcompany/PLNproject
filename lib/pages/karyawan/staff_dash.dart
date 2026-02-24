@@ -15,13 +15,12 @@ class DashboardAlternative extends StatefulWidget {
 
 class _DashboardAlternativeState extends State<DashboardAlternative> {
   static const Color primaryTeal = Color(0xFF008996);
-  // Warna box biru 
-  static const Color blueBoxColor = Color(0xffbfe0e6); 
-  
+  static const Color blueBoxColor = Color(0xffbfe0e6);
+
   final List<ItemModel> wismaData = LocalData.items
       .where((item) => item.type == ItemType.wisma)
       .toList();
-  
+
   final List<ItemModel> kelasData = LocalData.items
       .where((item) => item.type == ItemType.kelas)
       .toList();
@@ -34,24 +33,28 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. TOP HEADER SOLID COLOR (Warna sama dengan Box Biru)
-            Container(
+            // 1. TOP HEADER DENGAN GAMBAR + LAPISAN PUTIH TRANSPARAN
+            SizedBox(
               width: double.infinity,
               height: 80,
-              decoration: BoxDecoration(
-                color:primaryTeal, 
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(0),
-                  bottomRight: Radius.circular(0),
-                ),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.white.withOpacity(0.8),
-                    blueBoxColor, 
-                  ],
-                ),
+              child: Stack(
+                children: [
+                  // Lapisan Gambar Header
+                  Positioned.fill(
+                    child: SvgPicture.asset(
+                      'lib/assets/images/header_riwayat.svg',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  // Lapisan Putih Transparan (Overlay)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color:blueBoxColor.withOpacity(0.5),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 
@@ -61,7 +64,7 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  
+
                   // 2. Row Sapaan & Notifikasi
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -69,7 +72,8 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                       const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Selamat Datang,", style: TextStyle(fontSize: 14, color: Colors.black54)),
+                          Text("Selamat Datang,",
+                              style: TextStyle(fontSize: 14, color: Colors.black54)),
                           Text(
                             "PLN UPDL Makassar",
                             style: TextStyle(
@@ -83,16 +87,16 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 5,
-                            )
-                          ]
-                        ),
-                        child: const Icon(Icons.notifications_none, color: primaryTeal),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 5,
+                              )
+                            ]),
+                        child: const Icon(Icons.notifications_none,
+                            color: primaryTeal),
                       )
                     ],
                   ),
@@ -105,9 +109,9 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                       Expanded(
                         child: _buildStatBox(
                           bgColor: blueBoxColor,
-                          title: "Booking Wisma",
+                          title: "Reservasi Wisma",
                           svgPath: "lib/assets/images/rumahdpn.svg",
-                          imageOffset: -12.0, 
+                          imageOffset: -12.0,
                           onTap: () {},
                         ),
                       ),
@@ -115,9 +119,9 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                       Expanded(
                         child: _buildStatBox(
                           bgColor: const Color(0xffffd6d6),
-                          title: "Booking Kelas",
-                          svgPath: "lib/assets/images/kelas_headerdash.svg", 
-                          imageOffset: -12.0, 
+                          title: "Reservasi Kelas",
+                          svgPath: "lib/assets/images/kelas_headerdash.svg",
+                          imageOffset: -12.0,
                           onTap: () {},
                         ),
                       ),
@@ -141,7 +145,7 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                   _buildSectionHeader("Jenis Kelas"),
                   const SizedBox(height: 12),
                   _buildCarousel(kelasData),
-                  
+
                   const SizedBox(height: 30),
                 ],
               ),
@@ -153,7 +157,7 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
         currentIndex: 0,
         onTap: (index) {
           if (index == 1) {
-            Navigator.pushReplacementNamed(context, '/riwayat');
+            Navigator.pushReplacementNamed(context, '/riwayat_staff');
           } else if (index == 2) {
             Navigator.pushReplacementNamed(context, '/profil');
           }
@@ -162,7 +166,6 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
     );
   }
 
-  // Widget Box Status yang disempurnakan
   Widget _buildStatBox({
     required Color bgColor,
     required String title,
@@ -173,10 +176,10 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 130, 
+        height: 130,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: bgColor, 
+          color: bgColor,
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
@@ -189,13 +192,13 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
         child: Stack(
           children: [
             Positioned(
-              bottom: imageOffset, 
-              left: 0, 
+              bottom: imageOffset,
+              left: 0,
               right: 0,
               child: SvgPicture.asset(
-                svgPath, 
-                height: 75, 
-                fit: BoxFit.contain, 
+                svgPath,
+                height: 75,
+                fit: BoxFit.contain,
               ),
             ),
             Align(
@@ -203,13 +206,12 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
               child: Padding(
                 padding: const EdgeInsets.only(top: 15),
                 child: Text(
-                  title, 
+                  title,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 13, 
-                    fontWeight: FontWeight.bold, 
-                    color: Colors.black87
-                  ),
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87),
                 ),
               ),
             ),
@@ -223,10 +225,7 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
     return Text(
       title,
       style: const TextStyle(
-        fontSize: 16, 
-        fontWeight: FontWeight.bold, 
-        color: primaryTeal
-      ),
+          fontSize: 16, fontWeight: FontWeight.bold, color: primaryTeal),
     );
   }
 
@@ -234,7 +233,7 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
     return CarouselSlider(
       options: CarouselOptions(
         height: 140,
-        viewportFraction: 0.6, 
+        viewportFraction: 0.6,
         enableInfiniteScroll: false,
         padEnds: false,
         scrollDirection: Axis.horizontal,
@@ -252,23 +251,20 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
               image: DecorationImage(
-                image: AssetImage(item.imagePath), 
-                fit: BoxFit.cover
-              ),
+                  image: AssetImage(item.imagePath), fit: BoxFit.cover),
             ),
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
-                // Shadow hitam HANYA fokus di area bawah untuk teks
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                   colors: [
-                    Colors.black.withOpacity(0.8), // Hitam pekat di bawah
-                    Colors.black.withOpacity(0.2), // Memudar cepat
-                    Colors.transparent,           // Bersih dari tengah ke atas
+                    Colors.black.withOpacity(0.8),
+                    Colors.black.withOpacity(0.2),
+                    Colors.transparent,
                   ],
-                  stops: const [0.0, 0.4, 0.6], // Mengatur bayangan agar tidak naik ke atas
+                  stops: const [0.0, 0.4, 0.6],
                 ),
               ),
               padding: const EdgeInsets.all(12),
@@ -276,10 +272,9 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
               child: Text(
                 item.title,
                 style: const TextStyle(
-                  color: Colors.white, 
-                  fontSize: 12, 
-                  fontWeight: FontWeight.bold
-                ),
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold),
               ),
             ),
           ),

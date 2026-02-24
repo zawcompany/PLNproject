@@ -226,7 +226,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                     crossAxisCount: 2,
                     crossAxisSpacing: 14,
                     mainAxisSpacing: 14,
-                    childAspectRatio: 0.72,
+                    childAspectRatio: 0.85,
                   ),
                   itemCount: filteredRooms.length,
                   itemBuilder: (context, index) {
@@ -242,7 +242,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
 
   Widget _buildHeader(BuildContext context) {
     return SizedBox(
-      height: 280,
+      height: 180,
       child: Stack(
         children: [
           Positioned.fill(
@@ -259,8 +259,8 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withValues(alpha: 0.2), 
-                    Colors.black.withValues(alpha: 0.8)
+                    Colors.black.withOpacity(0.2), 
+                    Colors.black.withOpacity(0.8)
                   ],
                 ),
               ),
@@ -268,7 +268,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
           ),
           Positioned(
             top: 50,
-            left: 20,
+            left: 5,
             child: IconButton(
               icon: const CircleAvatar(
                 backgroundColor: Colors.white,
@@ -278,22 +278,22 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
             ),
           ),
           Positioned(
-            left: 20,
+            left: 19,
             right: 20,
-            bottom: 30,
+            bottom: 12, // Teks diturunkan ke dekat batas bawah (sebelumnya 20 atau 30)
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   widget.item.title,
-                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   widget.item.description,
-                  style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.3),
-                  maxLines: 3,
+                  style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.2),
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -353,6 +353,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
+            flex: 5,
             child: Stack(
               children: [
                 Positioned.fill(
@@ -361,22 +362,24 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                     child: Image.asset(widget.item.imagePath, fit: BoxFit.cover),
                   ),
                 ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: GestureDetector(
-                    onTap: () => _showComplaintDialog(room),
-                    child: Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF008996),
-                        shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                // Tombol seru (komplain) hanya muncul jika bukan di tab perbaikan
+                if (selectedTab < 2)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: () => _showComplaintDialog(room),
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF008996),
+                          shape: BoxShape.circle,
+                          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                        ),
+                        child: const Icon(Icons.priority_high, color: Colors.white, size: 16),
                       ),
-                      child: const Icon(Icons.priority_high, color: Colors.white, size: 16),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -406,14 +409,12 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => FormKelasPage( // Sesuaikan nama class form kelas Anda
+                                builder: (context) => FormKelasPage(
                                   room: room,
                                   item: widget.item,
                                 ),
                               ),
                             );
-
-                            // Jika berhasil pesan dan kembali dengan nilai true
                             if (result == true) {
                               _showSuccessSnackBar("Permohonan peminjaman kelas berhasil dikirim");
                             }
