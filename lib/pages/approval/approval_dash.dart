@@ -58,7 +58,11 @@ class _DashApprovalState extends State<DashApproval> {
                         ),
                       ],
                     ),
-                    const Icon(Icons.notifications_none, size: 28)
+                    IconButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/notif_approval'); 
+                      },
+                    icon: const Icon(Icons.notifications_none, size: 28))
                   ],
                 ),
                 const SizedBox(height: 25),
@@ -118,7 +122,6 @@ class _DashApprovalState extends State<DashApproval> {
         currentIndex: 0,
         onTap: (index) {
           if (index == 1) {
-            // DIPERBAIKI: Navigasi ke riwayat_approval
             Navigator.pushReplacementNamed(context, '/riwayat_approval');
           } else if (index == 2) {
             Navigator.pushReplacementNamed(context, '/profil');

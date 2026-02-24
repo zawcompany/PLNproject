@@ -10,89 +10,149 @@ class RiwayatApprovalPage extends StatefulWidget {
 }
 
 class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
-  final Color primaryTeal = const Color(0xFF008996);
-  final Color softGrey = const Color(0xFF9E9E9E);
-  
-  String selectedRiwayatType = "Pemesanan";
-  String selectedCategory = "Semua"; 
-  String selectedStatus = "Semua"; 
+  final Color primaryColor = const Color(0xFF008996);
 
-  // --- POP UP FILTER UTAMA ---
+  // Filter categories disamakan persis dengan staff riwayat
+  List<String> selectedWisma = ["Semua"];
+  List<String> selectedKelas = ["Semua"];
+  List<String> selectedStatus = ["Semua"];
+
+  // Dropdown title state
+  String selectedRiwayatType = "Pemesanan";
+
+  // --- LOGIK FILTER (DIAMBIL DARI STAFF RIWAYAT AGAR TIDAK ERROR) ---
   void _showFilterDialog() {
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
-          builder: (context, setStepState) {
+          builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               title: Text(
                 "Filter Approval",
-                style: TextStyle(color: primaryTeal, fontSize: 16, fontWeight: FontWeight.w600),
+                style: TextStyle(color: primaryColor, fontSize: 16, fontWeight: FontWeight.bold),
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Jenis Ruangan", style: TextStyle(fontSize: 12, color: softGrey)),
-                  const SizedBox(height: 8),
-                  _buildPopupDropdown(['Semua', 'Wisma', 'Kelas'], selectedCategory, (v) {
-                    setStepState(() => selectedCategory = v!);
-                  }),
-                  const SizedBox(height: 16),
-                  Text("Status Approval", style: TextStyle(fontSize: 12, color: softGrey)),
-                  const SizedBox(height: 8),
-                  _buildPopupDropdown(["Semua", "Menunggu", "Disetujui", "Ditolak"], selectedStatus, (v) {
-                    setStepState(() => selectedStatus = v!);
-                  }),
-                ],
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildFilterLabel("Pilih Jenis Wisma"),
+                      _buildFilterChips(
+                        options: ["Semua", "Anggrek", "Cempaka", "Bougenville", "Dahlia", "Edelweiss", "Flamboyan", "Gladiol", "Hortensia", "Toddopuli"],
+                        selectedList: selectedWisma,
+                        onSelected: (val) {
+                          setDialogState(() => _handleMultiSelect(selectedWisma, val));
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      _buildFilterLabel("Pilih Jenis Kelas"),
+                      _buildFilterChips(
+                        options: ["Semua", "Kelas A", "Kelas B", "Kelas C", "Aula", "Lab B", "Kelas Toddopuli"],
+                        selectedList: selectedKelas,
+                        onSelected: (val) {
+                          setDialogState(() => _handleMultiSelect(selectedKelas, val));
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      _buildFilterLabel("Status Approval"),
+                      _buildFilterChips(
+                        options: ["Semua", "Menunggu Konfirmasi", "Disetujui", "Ditolak"],
+                        selectedList: selectedStatus,
+                        onSelected: (val) {
+                          setDialogState(() => _handleMultiSelect(selectedStatus, val));
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text("Batal", style: TextStyle(color: softGrey)),
+                  child: const Text("Batal", style: TextStyle(color: Colors.grey)),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryTeal, 
+                    backgroundColor: primaryColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                   ),
                   onPressed: () {
                     setState(() {}); 
                     Navigator.pop(context);
                   },
-                  child: const Text("Terapkan", style: TextStyle(color: Colors.white, fontSize: 13)),
+                  child: const Text("Terapkan Filter", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ],
             );
-          }
+          },
         );
       },
     );
   }
 
-  Widget _buildPopupDropdown(List<String> items, String currentVal, Function(String?) onChanged) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FBFB),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEEEEEE)),
+  void _handleMultiSelect(List<String> list, String value) {
+    if (value == "Semua") {
+      list.clear();
+      list.add("Semua");
+    } else {
+      list.remove("Semua");
+      if (list.contains(value)) {
+        list.remove(value);
+        if (list.isEmpty) list.add("Semua");
+      } else {
+        list.add(value);
+      }
+    }
+  }
+
+  Widget _buildFilterLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          isExpanded: true,
-          value: currentVal,
-          icon: Icon(Icons.keyboard_arrow_down, size: 18, color: softGrey),
-          items: items.map((e) => DropdownMenuItem(
-            value: e, 
-            child: Text(e, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w400))
-          )).toList(),
-          onChanged: onChanged,
-        ),
-      ),
+    );
+  }
+
+  Widget _buildFilterChips({
+    required List<String> options,
+    required List<String> selectedList,
+    required Function(String) onSelected,
+  }) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: options.map((option) {
+        final bool isSelected = selectedList.contains(option);
+        return FilterChip(
+          label: Text(option),
+          selected: isSelected,
+          onSelected: (_) => onSelected(option),
+          showCheckmark: false,
+          labelStyle: TextStyle(
+            fontSize: 11,
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+          selectedColor: primaryColor,
+          backgroundColor: const Color(0xFFF0F4F4),
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: isSelected ? primaryColor : Colors.transparent),
+          ),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        );
+      }).toList(),
     );
   }
 
@@ -103,25 +163,17 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
       body: Column(
         children: [
           _buildHeader(),
+          const SizedBox(height: 15),
+          _buildTitleRow(),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  const SizedBox(height: 24),
-                  _buildTopFilterRow(),
-                  const SizedBox(height: 10), 
-                  Expanded(child: _buildListRiwayat()),
-                ],
-              ),
-            ),
+            child: _buildHistoryList(),
           ),
         ],
       ),
       bottomNavigationBar: CustomBottomNav(
         currentIndex: 1,
         onTap: (index) {
-          if (index == 0) Navigator.pushReplacementNamed(context, '/approval');
+          if (index == 0) Navigator.pushReplacementNamed(context, '/approval_dash');
           if (index == 2) Navigator.pushReplacementNamed(context, '/profil');
         },
       ),
@@ -131,168 +183,193 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
   Widget _buildHeader() {
     return SizedBox(
       width: double.infinity,
-      height: 160,
-      child: SvgPicture.asset('lib/assets/images/header_riwayat.svg', fit: BoxFit.cover),
+      height: 120,
+      child: SvgPicture.asset(
+        'lib/assets/images/header_riwayat.svg',
+        fit: BoxFit.cover,
+      ),
     );
   }
 
-  Widget _buildTopFilterRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Text(
-              "Riwayat",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.black.withValues(alpha: 0.7)),
-            ),
-            const SizedBox(width: 8),
-            PopupMenuButton<String>(
-              onSelected: (String value) => setState(() => selectedRiwayatType = value),
-              offset: const Offset(0, 40),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-              itemBuilder: (context) => [
-                const PopupMenuItem(value: "Pemesanan", child: Text("Pemesanan", style: TextStyle(fontSize: 13))),
-                const PopupMenuItem(value: "Pengaduan", child: Text("Pengaduan", style: TextStyle(fontSize: 13))),
+  Widget _buildTitleRow() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          PopupMenuButton<String>(
+            onSelected: (String value) => setState(() => selectedRiwayatType = value),
+            offset: const Offset(0, 40),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: "Pemesanan", child: Text("Pemesanan", style: TextStyle(fontSize: 13))),
+              const PopupMenuItem(value: "Pengaduan", child: Text("Pengaduan", style: TextStyle(fontSize: 13))),
+            ],
+            child: Row(
+              children: [
+                Text(
+                  "Riwayat $selectedRiwayatType",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.keyboard_arrow_down_rounded, color: primaryColor, size: 20),
               ],
-              child: Row(
+            ),
+          ),
+          GestureDetector(
+            onTap: _showFilterDialog,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE0F2F3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.filter_list_rounded, color: primaryColor, size: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryList() {
+    final List<Map<String, dynamic>> riwayatItems = [
+      {
+        "title": "Wisma Hortensia",
+        "detail": "Kamar VIP Hortensia 01",
+        "requester": "Zahra Amaliah Wildani",
+        "date": "12 Feb 2026",
+        "bookDate": "25 Feb - 27 Feb 2026",
+        "status": "Dikonfirmasi",
+        "isSelesai": true
+      },
+      {
+        "title": "Wisma Toddopuli",
+        "detail": "Kamar Toddopuli 10",
+        "requester": "Ahmad Dhani",
+        "date": "10 Feb 2026",
+        "bookDate": "01 Mar - 05 Mar 2026",
+        "status": "Menunggu",
+        "isSelesai": false
+      },
+    ];
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      itemCount: riwayatItems.length,
+      itemBuilder: (context, index) {
+        final item = riwayatItems[index];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 15),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: const Color(0xFFF0F4F4)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    selectedRiwayatType,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+                  Text(item['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text(item['date'], style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Oleh: ${item['requester']}",
+                style: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Divider(height: 1, color: Color(0xFFF0F4F4)),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.calendar_today_outlined, size: 14, color: primaryColor),
+                          const SizedBox(width: 6),
+                          Text(item['bookDate'], style: const TextStyle(fontSize: 11, color: Colors.black87)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: item['isSelesai'] ? const Color(0xFFE0F2F3) : const Color(0xFFFFF3E0),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          item['status'],
+                          style: TextStyle(
+                            color: item['isSelesai'] ? primaryColor : Colors.orange,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: primaryTeal.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (selectedRiwayatType == "Pemesanan") {
+                        _showTinjauPemesanan(context);
+                      } else {
+                        _showTinjauPengaduan(context);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: Icon(Icons.keyboard_arrow_down, color: primaryTeal, size: 18),
+                    child: const Text("Tinjau", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-        IconButton(
-          onPressed: _showFilterDialog,
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFFEEEEEE)),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.filter_list_rounded, color: primaryTeal, size: 20),
+            ],
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildListRiwayat() {
-    return ListView.builder(
-      itemCount: 4,
-      padding: EdgeInsets.zero,
-      itemBuilder: (context, index) {
-        bool isWaiting = index == 0;
-        return _buildCardItem(isWaiting);
+        );
       },
     );
   }
 
-  // --- CARD ITEM DENGAN TOMBOL ICON (BUKAN BUTTON PRIMITIF) ---
-  Widget _buildCardItem(bool isWaiting) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF5F5F5)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    _statusBadge(isWaiting ? "Menunggu" : "Disetujui"),
-                    const SizedBox(width: 8),
-                    Text(
-                      selectedRiwayatType == "Pemesanan" ? "ID #2941" : "Lap #882",
-                      style: TextStyle(color: softGrey, fontSize: 10, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  selectedRiwayatType == "Pemesanan" ? "Wisma Bougenville 1.1" : "AC Rusak - Kelas A1",
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.black87),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  selectedRiwayatType == "Pemesanan" ? "Pemesan: Zahra Amaliah" : "Pelapor: Ahmad Dhani",
-                  style: TextStyle(color: softGrey, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          // TOMBOL IKAN TINJAU ELEGAN
-          if (isWaiting)
-            GestureDetector(
-              onTap: () => _showTinjauDialog(),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: primaryTeal.withValues(alpha: 0.08),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.assignment_turned_in_outlined, color: primaryTeal, size: 22),
-              ),
-            )
-          else
-            Icon(Icons.check_circle_outline, color: Colors.green.withValues(alpha: 0.5), size: 22),
-        ],
-      ),
-    );
+  void _showTinjauPemesanan(BuildContext context) {
+    showDialog(context: context, builder: (context) => const DialogTinjauPemesanan());
   }
 
-  Widget _statusBadge(String status) {
-    Color color = status == "Menunggu" ? Colors.orange : (status == "Disetujui" ? Colors.green : Colors.red);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-      child: Text(status, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w600)),
-    );
-  }
-
-  void _showTinjauDialog() {
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (context) => selectedRiwayatType == "Pemesanan" 
-          ? const DialogTinjauPemesanan() 
-          : const DialogTinjauPengaduan(),
-    );
+  void _showTinjauPengaduan(BuildContext context) {
+    showDialog(context: context, builder: (context) => const DialogTinjauPengaduan());
   }
 }
 
-// --- POP UP TINJAU: DIBUAT MIRIP FORM PEMESANAN ---
+// --- POP UP TINJAU PEMESANAN ---
 class DialogTinjauPemesanan extends StatelessWidget {
   const DialogTinjauPemesanan({super.key});
+
   @override
   Widget build(BuildContext context) {
     const Color primaryTeal = Color(0xFF008996);
     return Dialog(
       backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -317,19 +394,9 @@ class DialogTinjauPemesanan extends StatelessWidget {
             _sectionTitle("Detail Ruangan"),
             _infoBox([
               _rowInfo("Jenis", "Wisma"),
-              _rowInfo("Nama Ruangan", "Bougenville 1.1"),
+              _rowInfo("Nama Ruangan", "Hortensia 01"),
               _rowInfo("Tanggal", "25 Feb - 27 Feb 2026"),
             ]),
-            const SizedBox(height: 20),
-            _sectionTitle("Dokumen Lampiran"),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                _filePreview("Surat Tugas", Icons.description_outlined),
-                const SizedBox(width: 12),
-                _filePreview("Bukti Bayar", Icons.account_balance_wallet_outlined),
-              ],
-            ),
             const SizedBox(height: 32),
             Row(
               children: [
@@ -341,7 +408,7 @@ class DialogTinjauPemesanan extends StatelessWidget {
                       side: const BorderSide(color: Colors.redAccent),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
-                    child: const Text("Tolak", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
+                    child: const Text("Tolak", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -350,11 +417,12 @@ class DialogTinjauPemesanan extends StatelessWidget {
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryTeal,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
-                    child: const Text("Terima", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    child: const Text("Terima", style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -370,23 +438,22 @@ class DialogTinjauPemesanan extends StatelessWidget {
   Widget _infoBox(List<Widget> children) => Container(
     margin: const EdgeInsets.only(top: 8),
     padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(color: const Color(0xFFF8FBFB), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFEEEEEE))),
+    decoration: BoxDecoration(
+      color: const Color(0xFFF8FBFB),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFEEEEEE)),
+    ),
     child: Column(children: children),
   );
 
-  Widget _rowInfo(String l, String v) => Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(l, style: const TextStyle(fontSize: 12, color: Colors.grey)), Text(v, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))]));
-
-  Widget _filePreview(String label, IconData icon) => Expanded(
-    child: Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(border: Border.all(color: const Color(0xFFEEEEEE)), borderRadius: BorderRadius.circular(12)),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: const Color(0xFF008996)),
-          const SizedBox(width: 8),
-          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
-        ],
-      ),
+  Widget _rowInfo(String l, String v) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(l, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(v, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+      ],
     ),
   );
 }
@@ -394,9 +461,12 @@ class DialogTinjauPemesanan extends StatelessWidget {
 // --- POP UP TINJAU PENGADUAN ---
 class DialogTinjauPengaduan extends StatelessWidget {
   const DialogTinjauPengaduan({super.key});
+
   @override
   Widget build(BuildContext context) {
+    const Color primaryTeal = Color(0xFF008996);
     return Dialog(
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -412,14 +482,39 @@ class DialogTinjauPengaduan extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(12)),
-              child: const Text("AC di ruangan Kelas A1 tidak dingin dan mengeluarkan bunyi berisik sejak pagi hari.", style: TextStyle(fontSize: 13, height: 1.5)),
+              child: const Text(
+                "AC di ruangan Kelas A1 tidak dingin dan mengeluarkan bunyi berisik sejak pagi hari.",
+                style: TextStyle(fontSize: 13, height: 1.5),
+              ),
             ),
             const SizedBox(height: 24),
             Row(
               children: [
-                Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12), side: const BorderSide(color: Colors.orange), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text("Perbaiki", style: TextStyle(color: Colors.orange)))),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: const BorderSide(color: Colors.orange),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text("Perbaiki", style: TextStyle(color: Colors.orange)),
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: ElevatedButton(onPressed: () => Navigator.pop(context), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008996), padding: const EdgeInsets.symmetric(vertical: 12), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text("Konfirmasi", style: TextStyle(color: Colors.white)))),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryTeal,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text("Konfirmasi"),
+                  ),
+                ),
               ],
             )
           ],

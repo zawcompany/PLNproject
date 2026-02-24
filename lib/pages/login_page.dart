@@ -43,9 +43,9 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       if (role == "approval") {
-        Navigator.pushReplacementNamed(context, '/dash_approval');
+        Navigator.pushReplacementNamed(context, '/approval_dash');
       } else if (role == "karyawan") {
-        Navigator.pushReplacementNamed(context, '/kdash_wisma');
+        Navigator.pushReplacementNamed(context, '/staff_dash');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Role tidak dikenali")),

@@ -5,12 +5,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'pages/welcome_page.dart';
 import 'pages/login_page.dart';
 import 'pages/regis_page.dart';
-import 'pages/karyawan/kdash_wisma.dart';
 import 'pages/profil_page.dart';
-import 'pages/karyawan/riwayat_page.dart';
+import 'pages/karyawan/staff_riwayat.dart';
 import 'pages/approval/approval_dash.dart';
 import 'pages/approval/riwayat_approval.dart';
 import 'pages/karyawan/staff_dash.dart';
+import 'pages/approval/approval_notif.dart';
+import 'pages/karyawan/staff_notif.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,9 +47,9 @@ class MyApp extends StatelessWidget {
           seedColor: const Color(0xFF008996),
         ),
       ),
-      // home: const WelcomePage(),
+      home: const WelcomePage(),
       // home: const DashApproval(),
-      home: const DashboardAlternative(), 
+      // home: const DashboardAlternative(), 
       routes: {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
@@ -57,6 +58,8 @@ class MyApp extends StatelessWidget {
         '/riwayat_approval': (context) => const RiwayatApprovalPage(), 
         '/profil': (context) => const ProfileScreen(),
         '/staff_dash': (context) => const DashboardAlternative(),
+        '/notif_approval': (context) => const NotificationApprovalPage(),
+        '/notif_staff': (context) => const NotificationStaffPage(),
       },
     );
   }

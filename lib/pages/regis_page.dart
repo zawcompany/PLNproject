@@ -50,9 +50,9 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) return;
 
       if (_selectedRole == 'approval') {
-        Navigator.pushReplacementNamed(context, '/dash_approval');
+        Navigator.pushReplacementNamed(context, '/approval_dash');
       } else {
-        Navigator.pushReplacementNamed(context, '/kdash_wisma');
+        Navigator.pushReplacementNamed(context, '/staff_dash');
       }
 
     } on FirebaseAuthException catch (e) {
