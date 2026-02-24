@@ -5,6 +5,9 @@ import 'package:monitoring_app/widgets/navbar.dart';
 import '../../models/item_model.dart';
 import '../../data/exsistingdata.dart';
 import 'detail.dart';
+import 'wisma_int_general.dart'; 
+import 'wisma_eks_general.dart';
+import 'staff_notif.dart'; 
 
 class DashboardAlternative extends StatefulWidget {
   const DashboardAlternative({super.key});
@@ -25,6 +28,65 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
       .where((item) => item.type == ItemType.kelas)
       .toList();
 
+  // Fungsi Pop-up Pilihan Jenis Pesanan Wisma (General)
+  void _showBookingTypeDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text("Jenis Pesanan", 
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        content: const Text("Silahkan pilih kategori pemesanan untuk wisma:"),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(context); 
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FormWismaGeneralInternal(),
+                        ),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFF008996)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text("Internal", style: TextStyle(color: Color(0xFF008996))),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FormWismaGeneralEksternal(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF008996),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text("Eksternal", style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,24 +95,22 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. TOP HEADER DENGAN GAMBAR + LAPISAN PUTIH TRANSPARAN
+            // 1. TOP HEADER
             SizedBox(
               width: double.infinity,
               height: 80,
               child: Stack(
                 children: [
-                  // Lapisan Gambar Header
                   Positioned.fill(
                     child: SvgPicture.asset(
                       'lib/assets/images/header_riwayat.svg',
                       fit: BoxFit.cover,
                     ),
                   ),
-                  // Lapisan Putih Transparan (Overlay)
                   Positioned.fill(
                     child: Container(
                       decoration: BoxDecoration(
-                        color:blueBoxColor.withOpacity(0.5),
+                        color: blueBoxColor.withOpacity(0.5),
                       ),
                     ),
                   ),
@@ -64,7 +124,6 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-
                   // 2. Row Sapaan & Notifikasi
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -77,26 +136,35 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                           Text(
                             "PLN UPDL Makassar",
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: primaryTeal,
                             ),
                           ),
                         ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 5,
-                              )
-                            ]),
-                        child: const Icon(Icons.notifications_none,
-                            color: primaryTeal),
+                      // ICON NOTIFIKASI DENGAN NAVIGASI
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const NotificationStaffPage()),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 5,
+                                )
+                              ]),
+                          child: const Icon(Icons.notifications_none, color: primaryTeal),
+                        ),
                       )
                     ],
                   ),
@@ -109,20 +177,22 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                       Expanded(
                         child: _buildStatBox(
                           bgColor: blueBoxColor,
-                          title: "Reservasi Wisma",
+                          title: "Pemesanan Wisma",
                           svgPath: "lib/assets/images/rumahdpn.svg",
                           imageOffset: -12.0,
-                          onTap: () {},
+                          onTap: () => _showBookingTypeDialog(),
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: _buildStatBox(
                           bgColor: const Color(0xffffd6d6),
-                          title: "Reservasi Kelas",
+                          title: "Pemesanan Kelas",
                           svgPath: "lib/assets/images/kelas_headerdash.svg",
                           imageOffset: -12.0,
-                          onTap: () {},
+                          onTap: () {
+                            // Navigasi ke form kelas general jika sudah ada filenya
+                          },
                         ),
                       ),
                     ],
@@ -132,7 +202,6 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                   const Divider(color: Colors.black12, thickness: 1),
                   const SizedBox(height: 10),
 
-                  // 4. Carousel Jenis Wisma
                   _buildSectionHeader("Jenis Wisma"),
                   const SizedBox(height: 12),
                   _buildCarousel(wismaData),
@@ -141,7 +210,6 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                   const Divider(color: Colors.black12, thickness: 1),
                   const SizedBox(height: 10),
 
-                  // 5. Carousel Jenis Kelas
                   _buildSectionHeader("Jenis Kelas"),
                   const SizedBox(height: 12),
                   _buildCarousel(kelasData),

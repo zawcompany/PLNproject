@@ -64,6 +64,62 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
     super.dispose();
   }
 
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 60),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  "Pesanan Berhasil!",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "Permohonan reservasi Anda telah berhasil dikirim ke sistem dan sedang menunggu persetujuan.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.5),
+                ),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); 
+                      Navigator.pop(context, true); 
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryTeal,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: const Text("Tutup", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,40 +129,49 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Custom Top Bar dengan Gambar dan Navigasi
-              Column(
+              // 1. HEADER DENGAN GAMBAR DAN TOMBOL BACK
+              Stack(
                 children: [
                   SizedBox(
                     width: double.infinity,
-                    height: 80, 
-                    child: SvgPicture.asset(
-                      'lib/assets/images/header_riwayat.svg',
-                      fit: BoxFit.cover,
-                    ),
+                    height: 100,
+                    child: SvgPicture.asset('lib/assets/images/header_riwayat.svg', fit: BoxFit.cover),
                   ),
-                  // Area Tombol Back dan Judul
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.black),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        const Text(
-                          "Formulir Pemesanan",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
+                  Positioned(
+                    top: 15,
+                    left: 15,
+                    child: InkWell(
+                      onTap: () => Navigator.pop(context),
+                      child: const CircleAvatar(
+                        radius: 18,
+                        backgroundColor: Colors.white,
+                        child: Icon(Icons.arrow_back, color: Colors.black, size: 20),
+                      ),
                     ),
                   ),
                 ],
               ),
 
+              // 2. JUDUL DAN SUBJUDUL SEJAJAR FIELD
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Formulir Pemesanan", 
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "Lengkapi data pemesanan ${widget.room.name}", 
+                      style: const TextStyle(fontSize: 13, color: Colors.grey)
+                    ),
+                  ],
+                ),
+              ),
+
+              // 3. FORM BODY
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Form(
@@ -114,20 +179,16 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 5),
-                      const Text(
-                        "Lengkapi data pemesanan wisma internal",
-                        style: TextStyle(fontSize: 13, color: Colors.black54),
-                      ),
-                      const SizedBox(height: 25),
-                      
+                      // DATA DIRI
                       _buildField("Nama Lengkap", namaController, Icons.person_outline),
                       _buildField("Nomor Induk Kependudukan (NIK)", nikController, Icons.badge_outlined, TextInputType.number),
                       _buildField("Nomor Induk Pegawai (NIP)", nipController, Icons.work_outline, TextInputType.number, false),
                       
+                      // UNGGAH SURAT TUGAS
                       _buildUploadBox("Unggah Surat Tugas", suratTugas != null, _pickSurat),
                       
                       const SizedBox(height: 30),
+                      // JUMLAH TAMU
                       const Text("Jumlah Tamu", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 16),
                       Row(
@@ -138,10 +199,10 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
                         ],
                       ),
 
+                      // PERIODE TANGGAL
                       _buildDateRangeField(),
                       const SizedBox(height: 24),
                       
-                      // Hanya tampilkan card jika tanggal sudah dipilih
                       if (selectedDate != null) _buildTotalCard(),
 
                       const SizedBox(height: 40),
@@ -192,15 +253,7 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
               prefixIcon: Icon(icon, size: 18, color: Colors.grey[600]),
               filled: true,
               fillColor: const Color(0xFFF5F5F5),
-              contentPadding: const EdgeInsets.symmetric(vertical: 16),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             ),
           ),
         ],
@@ -235,10 +288,7 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
                 if (isFileSelected)
                   const Positioned(
                     right: 16,
-                    child: Text(
-                      "Berhasil ✔",
-                      style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold),
-                    ),
+                    child: Text("Berhasil ✔", style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
                   ),
               ],
             ),
@@ -258,10 +308,7 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
           onTap: _pickDateRange,
           child: Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(12),
-            ),
+            decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(12)),
             child: Row(
               children: [
                 Icon(Icons.calendar_month, color: Colors.grey[600], size: 18),
@@ -283,18 +330,12 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
   Widget _buildTotalCard() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: softTeal, 
-        borderRadius: BorderRadius.circular(16)
-      ),
+      decoration: BoxDecoration(color: softTeal, borderRadius: BorderRadius.circular(16)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text("Total Pembayaran", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          Text(
-            currency.format(totalHarga), 
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: primaryTeal)
-          ),
+          Text(currency.format(totalHarga), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: primaryTeal)),
         ],
       ),
     );
@@ -312,16 +353,12 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
 
   Future<void> _pickSurat() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      setState(() {
-        suratTugas = File(picked.path);
-      });
-    }
+    if (picked != null) setState(() => suratTugas = File(picked.path));
   }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      Navigator.pop(context, true);
+      _showSuccessDialog();
     }
   }
 }
