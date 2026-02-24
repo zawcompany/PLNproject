@@ -14,6 +14,7 @@ class FormEditJenis extends StatefulWidget {
 class _FormEditJenisState extends State<FormEditJenis> {
   final _formKey = GlobalKey<FormState>();
   static const Color primaryTeal = Color(0xFF008996);
+  static const Color blueBoxColor = Color(0xffbfe0e6); 
   
   ItemModel? selectedItem;
   final TextEditingController nameController = TextEditingController();

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../models/item_model.dart';
@@ -67,86 +68,104 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white, 
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80.0),
-        child: AppBar(
-          backgroundColor: softTeal, 
-          elevation: 0,
-          centerTitle: false,
-          leading: Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-          titleSpacing: 0,
-          title: const Padding(
-            padding: EdgeInsets.only(top: 15),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "Pemesanan Internal", 
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)
-                ),
-                Text(
-                  "Lengkapi data pemesanan wisma", 
-                  style: TextStyle(fontSize: 13, color: Colors.black54)
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Form(
-          key: _formKey,
+      body: SafeArea(
+        child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 30),
-              _buildField("Nama Lengkap", namaController, Icons.person_outline),
-              _buildField("Nomor Induk Karyawan (NIK)", nikController, Icons.badge_outlined, TextInputType.number),
-              _buildField("Nomor Induk Pegawai (NIP)", nipController, Icons.work_outline, TextInputType.number, false),
-              
-              _buildUploadBox("Unggah Surat Tugas", suratTugas != null, _pickSurat),
-              
-              const SizedBox(height: 30),
-              const Text("Jumlah Tamu", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              Row(
+              // 1. Custom Top Bar dengan Gambar dan Navigasi
+              Column(
                 children: [
-                  Expanded(child: _buildField("Perempuan", perempuanController, Icons.female_outlined, TextInputType.number)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildField("Laki-laki", lakiController, Icons.male_outlined, TextInputType.number)),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 80, 
+                    child: SvgPicture.asset(
+                      'lib/assets/images/header_riwayat.svg',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  // Area Tombol Back dan Judul
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.black),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const Text(
+                          "Formulir Pemesanan",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
 
-              _buildDateRangeField(),
-              const SizedBox(height: 24),
-              _buildTotalCard(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 5),
+                      const Text(
+                        "Lengkapi data pemesanan wisma internal",
+                        style: TextStyle(fontSize: 13, color: Colors.black54),
+                      ),
+                      const SizedBox(height: 25),
+                      
+                      _buildField("Nama Lengkap", namaController, Icons.person_outline),
+                      _buildField("Nomor Induk Karyawan (NIK)", nikController, Icons.badge_outlined, TextInputType.number),
+                      _buildField("Nomor Induk Pegawai (NIP)", nipController, Icons.work_outline, TextInputType.number, false),
+                      
+                      _buildUploadBox("Unggah Surat Tugas", suratTugas != null, _pickSurat),
+                      
+                      const SizedBox(height: 30),
+                      const Text("Jumlah Tamu", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(child: _buildField("Perempuan", perempuanController, Icons.female_outlined, TextInputType.number)),
+                          const SizedBox(width: 16),
+                          Expanded(child: _buildField("Laki-laki", lakiController, Icons.male_outlined, TextInputType.number)),
+                        ],
+                      ),
 
-              const SizedBox(height: 40),
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: _submitForm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryTeal,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    "Pesan Sekarang",
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      _buildDateRangeField(),
+                      const SizedBox(height: 24),
+                      
+                      // Hanya tampilkan card jika tanggal sudah dipilih
+                      if (selectedDate != null) _buildTotalCard(),
+
+                      const SizedBox(height: 40),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 55,
+                        child: ElevatedButton(
+                          onPressed: _submitForm,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryTeal,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            "Pesan Sekarang",
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 50),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 50),
             ],
           ),
         ),

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../models/item_model.dart';
@@ -67,94 +68,119 @@ class _FormKelasPageState extends State<FormKelasPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80.0),
-        child: AppBar(
-          backgroundColor: softTeal,
-          elevation: 0,
-          leading: Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-          titleSpacing: 0,
-          title: const Padding(
-            padding: EdgeInsets.only(top: 15),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text("Reservasi Ruang Kelas",
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black)),
-                Text("Isi data untuk peminjaman ruangan",
-                    style: TextStyle(fontSize: 13, color: Colors.black54)),
-              ],
-            ),
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Form(
-          key: _formKey,
+      body: SafeArea(
+        child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 30),
-              _buildField(
-                label: "Nama Lengkap",
-                controller: namaController,
-                icon: Icons.person_outline,
-              ),
-              _buildField(
-                label: "NIK",
-                controller: nikController,
-                icon: Icons.badge_outlined,
-                type: TextInputType.number,
-              ),
-              _buildField(
-                label: "NIP",
-                controller: nipController,
-                icon: Icons.work_outline,
-                type: TextInputType.number,
-              ),
-              _buildUploadBox(
-                  "Unggah Surat Tugas", suratTugas != null, _pickSurat),
-              const SizedBox(height: 30),
-              _buildField(
-                label: "Jumlah Tamu (Kapasitas: ${widget.room.capacity})",
-                controller: tamuController,
-                icon: Icons.groups_outlined,
-                type: TextInputType.number,
-                onChanged: _checkCapacity,
-              ),
-              if (recommendedRoom != null) _buildRecommendationCard(),
-              _buildDateRangeField(),
-              const SizedBox(height: 40),
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: _submitForm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryTeal,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
+              // 1. Custom Top Bar dengan Gambar dan Navigasi
+              Column(
+                children: [
+                  // Area Gambar Header (Tinggi 70)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 70, 
+                    child: SvgPicture.asset(
+                      'lib/assets/images/header_riwayat.svg',
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                  child: const Text("Pesan Sekarang",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16)),
+                  // Area Tombol Back dan Judul
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.black),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const Text(
+                          "Reservasi Ruang Kelas",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 5),
+                      const Text(
+                        "Isi data untuk peminjaman ruangan kelas",
+                        style: TextStyle(fontSize: 13, color: Colors.black54),
+                      ),
+                      const SizedBox(height: 25),
+                      
+                      _buildField(
+                        label: "Nama Lengkap",
+                        controller: namaController,
+                        icon: Icons.person_outline,
+                      ),
+                      _buildField(
+                        label: "NIK",
+                        controller: nikController,
+                        icon: Icons.badge_outlined,
+                        type: TextInputType.number,
+                      ),
+                      _buildField(
+                        label: "NIP",
+                        controller: nipController,
+                        icon: Icons.work_outline,
+                        type: TextInputType.number,
+                      ),
+                      
+                      _buildUploadBox("Unggah Surat Tugas", suratTugas != null, _pickSurat),
+                      
+                      const SizedBox(height: 30),
+                      _buildField(
+                        label: "Jumlah Tamu (Kapasitas: ${widget.room.capacity})",
+                        controller: tamuController,
+                        icon: Icons.groups_outlined,
+                        type: TextInputType.number,
+                        onChanged: _checkCapacity,
+                      ),
+                      
+                      if (recommendedRoom != null) _buildRecommendationCard(),
+                      
+                      _buildDateRangeField(),
+                      const SizedBox(height: 40),
+                      
+                      SizedBox(
+                        width: double.infinity,
+                        height: 55,
+                        child: ElevatedButton(
+                          onPressed: _submitForm,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryTeal,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            "Pesan Sekarang",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 50),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 50),
             ],
           ),
         ),
@@ -203,13 +229,12 @@ class _FormKelasPageState extends State<FormKelasPage> {
     );
   }
 
-  Widget _buildUploadBox(
-      String label, bool isFileSelected, VoidCallback onTap) {
+  Widget _buildUploadBox(String label, bool isFileSelected, VoidCallback onTap) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87)),
         const SizedBox(height: 8),
         InkWell(
           onTap: onTap,

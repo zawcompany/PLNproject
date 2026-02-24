@@ -110,7 +110,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
         currentIndex: 1,
         onTap: (index) {
           if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/kdash_wisma');
+            Navigator.pushReplacementNamed(context, '/staff_dash');
           } else if (index == 2) {
             Navigator.pushReplacementNamed(context, '/profil');
           }

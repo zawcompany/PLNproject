@@ -25,58 +25,52 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70.0),
-        child: AppBar(
-          backgroundColor: softTeal,
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          title: Padding(
-            padding: const EdgeInsets.only(top: 10, left: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Selamat Datang,",
-                      style: TextStyle(fontSize: 14, color: Colors.black54),
-                    ),
-                    Text(
-                      "User PLN",
-                      style: TextStyle(
-                        fontSize: 18, 
-                        fontWeight: FontWeight.bold, 
-                        color: Colors.black
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.notifications_none, color: primaryTeal),
-                )
-              ],
-            ),
-          ),
-        ),
-      ),
+      // AppBar dihapus untuk tampilan yang lebih polos
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 15),
-              // Menu Dropdown
+              const SizedBox(height: 25),
+              
+              // Header Teks Langsung di Body
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Selamat Datang,",
+                        style: TextStyle(fontSize: 14, color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                  //
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        )
+                      ]
+                    ),
+                    child: const Icon(Icons.notifications_none, color: primaryTeal),
+                  )
+                ],
+              ),
+              
+              const SizedBox(height: 20),
+
+              // Menu Dropdown Wisma / Kelas
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
                   color: softTeal, 
                   borderRadius: BorderRadius.circular(20),
@@ -106,8 +100,10 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 20),
-              // Header Card
+
+              // Header Card (Statistik)
               SizedBox(
                 height: 180,
                 child: Stack(
@@ -169,21 +165,14 @@ class _DashboardPageState extends State<DashboardPage> {
                         Expanded(
                           flex: 5, 
                           child: Padding(
-                            padding: const EdgeInsets.only(
-                              right: 12,
-                              top: 16,
-                              bottom: 16,
-                            ),
+                            padding: const EdgeInsets.only(right: 12, top: 16, bottom: 16),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 12,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFE3F2F4),
                                 borderRadius: BorderRadius.circular(18),
                                 border: Border.all(
-                                  color: primaryTeal.withOpacity(0.4),
+                                  color: primaryTeal.withValues(alpha: 0.4),
                                   width: 1.2,
                                 ),
                               ),
@@ -201,14 +190,18 @@ class _DashboardPageState extends State<DashboardPage> {
                   ],
                 ),
               ),
+
               const SizedBox(height: 25),
               const Divider(color: Colors.black12, thickness: 1),
               const SizedBox(height: 15),
+              
               Text(
                 selectedMenu == ItemType.wisma ? "Jenis Wisma" : "Jenis Kelas",
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: primaryTeal),
               ),
+              
               const SizedBox(height: 15),
+              
               Expanded(
                 child: GridView.builder(
                   itemCount: filteredItems.length,

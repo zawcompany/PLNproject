@@ -10,6 +10,7 @@ import 'pages/profil_page.dart';
 import 'pages/karyawan/riwayat_page.dart';
 import 'pages/approval/approval_dash.dart';
 import 'pages/approval/riwayat_approval.dart';
+import 'pages/karyawan/staff_dash.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,15 +47,16 @@ class MyApp extends StatelessWidget {
         ),
       ),
       // home: const WelcomePage(),
-      home: const DashApproval(),
+      // home: const DashApproval(),
+      home: const DashboardAlternative(), 
       routes: {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
-        '/kdash_wisma': (context) => const DashboardPage(), // Dashboard Karyawan
-        '/dash_approval': (context) => DashApproval(),      // Dashboard Approval
-        '/riwayat': (context) => const RiwayatPage(),       // Riwayat Karyawan
-        '/riwayat_approval': (context) => const RiwayatApprovalPage(), // Tambahkan ini jika belum ada
+        '/approval_dash': (context) => DashApproval(),      // Dashboard Approval
+        '/riwayat_staff': (context) => const RiwayatPage(),       // Riwayat Karyawan
+        '/riwayat_approval': (context) => const RiwayatApprovalPage(), 
         '/profil': (context) => const ProfileScreen(),
+        '/staff_dash': (context) => const DashboardAlternative(), // Dashboard Staff
       },
     );
   }

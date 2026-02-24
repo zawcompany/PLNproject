@@ -71,12 +71,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (index == 0) {
       Navigator.pushReplacementNamed(
         context, 
-        role == 'approval' ? '/approval' : '/kdash_wisma'
+        role == 'approval' ? '/approval_dash' : '/staff_dash'
       );
     } else if (index == 1) {
       Navigator.pushReplacementNamed(
         context, 
-        role == 'approval' ? '/riwayat_approval' : '/riwayat' 
+        role == 'approval' ? '/riwayat_approval' : '/riwayat_staff' 
       );
     }
   }
