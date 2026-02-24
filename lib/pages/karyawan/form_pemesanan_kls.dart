@@ -128,13 +128,13 @@ class _FormKelasPageState extends State<FormKelasPage> {
                         icon: Icons.person_outline,
                       ),
                       _buildField(
-                        label: "NIK",
+                        label: "Nomor Induk Kependudukan (NIK)",
                         controller: nikController,
                         icon: Icons.badge_outlined,
                         type: TextInputType.number,
                       ),
                       _buildField(
-                        label: "NIP",
+                        label: "Nomor Induk Pegawai (NIP)",
                         controller: nipController,
                         icon: Icons.work_outline,
                         type: TextInputType.number,

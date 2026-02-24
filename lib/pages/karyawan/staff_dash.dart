@@ -7,7 +7,8 @@ import '../../data/exsistingdata.dart';
 import 'detail.dart';
 import 'wisma_int_general.dart'; 
 import 'wisma_eks_general.dart';
-import 'staff_notif.dart'; 
+import 'staff_notif.dart'; // Nama file disesuaikan dengan yang kita buat tadi
+import 'kelas_general.dart'; // Nama file formulir kelas general
 
 class DashboardAlternative extends StatefulWidget {
   const DashboardAlternative({super.key});
@@ -187,11 +188,14 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                       Expanded(
                         child: _buildStatBox(
                           bgColor: const Color(0xffffd6d6),
-                          title: "Pemesanan Kelas",
+                          title: "Peminjaman Kelas",
                           svgPath: "lib/assets/images/kelas_headerdash.svg",
                           imageOffset: -12.0,
                           onTap: () {
-                            // Navigasi ke form kelas general jika sudah ada filenya
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const FormKelasGeneral()),
+                            );
                           },
                         ),
                       ),

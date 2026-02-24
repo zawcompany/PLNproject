@@ -12,83 +12,147 @@ class RiwayatPage extends StatefulWidget {
 class _RiwayatPageState extends State<RiwayatPage> {
   final Color primaryColor = const Color(0xFF008996);
 
-  // Pop up dialog filter
+  List<String> selectedWisma = ["Semua"];
+  List<String> selectedKelas = ["Semua"];
+  List<String> selectedStatus = ["Semua"];
+
   void _showFilterDialog() {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(
-            "Filter Riwayat",
-            style: TextStyle(color: primaryColor, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildFilterLabel("Pilih Wisma"),
-                _buildSimpleDropdown([
-                  "Semua Wisma", "Anggrek", "Cempaka", "Bougenville", 
-                  "Dahlia", "Edelweiss", "Flamboyan", "Gladiol", 
-                  "Hortensia", "Toddopuli"
-                ]),
-                const SizedBox(height: 15),
-                _buildFilterLabel("Status Pesanan"),
-                _buildSimpleDropdown(["Semua Status", "Menunggu Konfirmasi", "Dikonfirmasi", "Dibatalkan"]),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Batal", style: TextStyle(color: Colors.grey, fontSize: 13)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              title: Text(
+                "Filter Riwayat",
+                style: TextStyle(color: primaryColor, fontSize: 16, fontWeight: FontWeight.bold),
               ),
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Terapkan", style: TextStyle(color: Colors.white, fontSize: 13)),
-            ),
-          ],
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // KATEGORI WISMA
+                      _buildFilterLabel("Pilih Jenis Wisma"),
+                      _buildFilterChips(
+                        options: ["Semua", "Anggrek", "Cempaka", "Bougenville", "Dahlia", "Edelweiss", "Flamboyan", "Gladiol", "Hortensia", "Toddopuli"],
+                        selectedList: selectedWisma,
+                        onSelected: (val) {
+                          setDialogState(() => _handleMultiSelect(selectedWisma, val));
+                        },
+                      ),
+                      const SizedBox(height: 24), // Jarak antar kategori lebih lebar
+
+                      // KATEGORI KELAS
+                      _buildFilterLabel("Pilih Jenis Kelas"),
+                      _buildFilterChips(
+                        options: ["Semua", "Kelas A", "Kelas B", "Kelas C", "Aula", "Lab B", "Kelas Toddopuli"],
+                        selectedList: selectedKelas,
+                        onSelected: (val) {
+                          setDialogState(() => _handleMultiSelect(selectedKelas, val));
+                        },
+                      ),
+                      const SizedBox(height: 24),
+
+                      // KATEGORI STATUS
+                      _buildFilterLabel("Status Pesanan"),
+                      _buildFilterChips(
+                        options: ["Semua", "Menunggu Konfirmasi", "Disetujui", "Ditolak"],
+                        selectedList: selectedStatus,
+                        onSelected: (val) {
+                          setDialogState(() => _handleMultiSelect(selectedStatus, val));
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Batal", style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                  ),
+                  onPressed: () {
+                    setState(() {}); 
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Terapkan Filter", style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
+  // Logika untuk menangani pilihan ganda
+  void _handleMultiSelect(List<String> list, String value) {
+    if (value == "Semua") {
+      list.clear();
+      list.add("Semua");
+    } else {
+      list.remove("Semua");
+      if (list.contains(value)) {
+        list.remove(value);
+        if (list.isEmpty) list.add("Semua");
+      } else {
+        list.add(value);
+      }
+    }
+  }
+
   Widget _buildFilterLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87)),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
+      ),
     );
   }
 
-  Widget _buildSimpleDropdown(List<String> items) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FBFB),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE0E6E6)),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          isExpanded: true,
-          value: items[0],
-          icon: const Icon(Icons.keyboard_arrow_down, size: 20),
-          style: const TextStyle(fontSize: 13, color: Colors.black87),
-          items: items.map((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
-          onChanged: (_) {},
-        ),
-      ),
+  Widget _buildFilterChips({
+    required List<String> options,
+    required List<String> selectedList,
+    required Function(String) onSelected,
+  }) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8, // Jarak antar baris chip lebih rapi
+      children: options.map((option) {
+        final bool isSelected = selectedList.contains(option);
+        return FilterChip(
+          label: Text(option),
+          selected: isSelected,
+          onSelected: (_) => onSelected(option),
+          showCheckmark: false,
+          labelStyle: TextStyle(
+            fontSize: 11,
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+          selectedColor: primaryColor,
+          backgroundColor: const Color(0xFFF0F4F4),
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: isSelected ? primaryColor : Colors.transparent),
+          ),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        );
+      }).toList(),
     );
   }
 
@@ -182,14 +246,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
         "status": "Dikonfirmasi",
         "isSelesai": true
       },
-      {
-        "title": "Wisma Cempaka",
-        "detail": "Kamar Cempaka 03",
-        "date": "01 Feb 2026",
-        "bookDate": "10 Feb - 12 Feb 2026",
-        "status": "Dikonfirmasi",
-        "isSelesai": true
-      },
     ];
 
     return ListView.builder(
@@ -206,9 +262,9 @@ class _RiwayatPageState extends State<RiwayatPage> {
             border: Border.all(color: const Color(0xFFF0F4F4)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05), 
-                blurRadius: 10, 
-                offset: const Offset(0, 4)
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -219,23 +275,23 @@ class _RiwayatPageState extends State<RiwayatPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    item['title'], 
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)
+                    item['title'],
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
                   Text(
-                    item['date'], 
-                    style: const TextStyle(color: Colors.grey, fontSize: 10)
+                    item['date'],
+                    style: const TextStyle(color: Colors.grey, fontSize: 10),
                   ),
                 ],
               ),
               const SizedBox(height: 4),
               Text(
-                item['detail'], 
+                item['detail'],
                 style: TextStyle(
-                  color: primaryColor, 
-                  fontSize: 12, 
-                  fontWeight: FontWeight.bold 
-                )
+                  color: primaryColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),
@@ -249,8 +305,8 @@ class _RiwayatPageState extends State<RiwayatPage> {
                       Icon(Icons.calendar_today_outlined, size: 14, color: primaryColor),
                       const SizedBox(width: 6),
                       Text(
-                        item['bookDate'], 
-                        style: const TextStyle(fontSize: 11, color: Colors.black87)
+                        item['bookDate'],
+                        style: const TextStyle(fontSize: 11, color: Colors.black87),
                       ),
                     ],
                   ),
