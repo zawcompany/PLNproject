@@ -23,6 +23,9 @@ class _RiwayatPageState extends State<RiwayatPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
+              backgroundColor: Colors.white, 
+              surfaceTintColor: Colors.white, 
+              elevation: 0, 
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               title: Text(

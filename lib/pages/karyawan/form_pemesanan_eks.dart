@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Tambah ini
 import '../../models/item_model.dart';
 import '../../models/room_model.dart';
+import '../../models/booking_model.dart'; // Tambah ini
+import '../../services/database_service.dart'; // Tambah ini
 
 class FormWismaEksternalPage extends StatefulWidget {
   final RoomModel room;
@@ -22,6 +25,7 @@ class FormWismaEksternalPage extends StatefulWidget {
 
 class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
   final _formKey = GlobalKey<FormState>();
+  final DatabaseService _db = DatabaseService(); // Inisialisasi Service
 
   static const Color softTeal = Color(0xFFE8F1F3);
   static const Color primaryTeal = Color(0xFF008996);
@@ -36,6 +40,7 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
 
   DateTimeRange? selectedDate;
   File? buktiPembayaran;
+  bool _isSubmitting = false; // State untuk loading
 
   final currency = NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0);
 
@@ -66,6 +71,47 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
     perempuanController.dispose();
     lakiController.dispose();
     super.dispose();
+  }
+
+  // FUNGSI SIMPAN DATA KE FIREBASE
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate() && selectedDate != null && buktiPembayaran != null) {
+      setState(() => _isSubmitting = true);
+      
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) throw "User tidak terautentikasi";
+
+        // 1. Buat Objek Booking
+        final newBooking = BookingModel(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          userId: user.uid,
+          userName: namaController.text.trim(),
+          roomIds: [widget.room.id], // ID Kamar spesifik
+          itemName: widget.item.title,
+          start: selectedDate!.start,
+          end: selectedDate!.end,
+          totalPayment: totalHarga.toDouble(),
+          status: BookingStatus.pending,
+          // Catatan: Jika ingin simpan foto, idealnya upload ke Storage dulu lalu ambil URL-nya
+          // Untuk sekarang kita simpan path lokal atau placeholder
+          paymentProof: buktiPembayaran!.path, 
+        );
+
+        // 2. Kirim ke DatabaseService
+        await _db.createBooking(newBooking, widget.item.id);
+
+        if (!mounted) return;
+        _showSuccessDialog();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal mengirim pesanan: $e"), backgroundColor: Colors.red),
+        );
+      } finally {
+        if (mounted) setState(() => _isSubmitting = false);
+      }
+    }
   }
 
   void _showSuccessDialog() {
@@ -105,8 +151,8 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pop(context); 
-                      Navigator.pop(context, true); 
+                      Navigator.pop(context); // Tutup dialog
+                      Navigator.pop(context, true); // Kembali ke Detail dengan sukses
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryTeal,
@@ -133,7 +179,7 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. HEADER
+              // 1. HEADER (Layout Tetap)
               Stack(
                 children: [
                   SizedBox(
@@ -156,7 +202,7 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
                 ],
               ),
 
-              // 2. JUDUL DAN SUBJUDUL
+              // 2. JUDUL DAN SUBJUDUL (Layout Tetap)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
                 child: Column(
@@ -175,7 +221,7 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
                 ),
               ),
 
-              // 3. FORM BODY
+              // 3. FORM BODY (Layout Tetap)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Form(
@@ -183,7 +229,6 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // DATA DIRI
                       _buildField("Nama Lengkap", namaController, Icons.person_outline),
                       _buildField("Nomor Induk Kependudukan (NIK)", nikController, Icons.badge_outlined, TextInputType.number),
                       _buildField("Nomor Induk Pegawai (Opsional)", nipController, Icons.work_outline, TextInputType.number, false),
@@ -191,7 +236,6 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
                       _buildField("Nomor NPWP", npwpController, Icons.assignment_outlined, TextInputType.number),
 
                       const SizedBox(height: 10),
-                      // JUMLAH TAMU
                       const Text("Jumlah Tamu", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 16),
                       Row(
@@ -202,11 +246,9 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
                         ],
                       ),
 
-                      // PERIODE RESERVASI
                       _buildDateRangeField(),
                       const SizedBox(height: 24),
                       
-                      // RINCIAN PEMBAYARAN (Muncul jika tanggal sudah dipilih)
                       if (selectedDate != null) ...[
                         _buildTotalCard(),
                         const SizedBox(height: 24),
@@ -220,17 +262,19 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
                         width: double.infinity,
                         height: 55,
                         child: ElevatedButton(
-                          onPressed: (buktiPembayaran != null) ? _submitForm : null, 
+                          onPressed: (_isSubmitting || buktiPembayaran == null) ? null : _submitForm, 
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryTeal,
                             disabledBackgroundColor: Colors.grey[300],
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            "Pesan Sekarang",
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
+                          child: _isSubmitting 
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text(
+                                "Pesan Sekarang",
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
                         ),
                       ),
                       const SizedBox(height: 50),
@@ -245,6 +289,7 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
     );
   }
 
+  // Widget helper tetap sama persis layoutnya
   Widget _buildField(String label, TextEditingController controller, IconData icon, [TextInputType type = TextInputType.text, bool isRequired = true]) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
@@ -389,11 +434,5 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
   Future<void> _pickImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (picked != null) setState(() => buktiPembayaran = File(picked.path));
-  }
-
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      _showSuccessDialog();
-    }
   }
 }

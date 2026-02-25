@@ -3,12 +3,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:monitoring_app/widgets/navbar.dart';
 import '../../models/item_model.dart';
-import '../../data/exsistingdata.dart';
+import '../../services/database_service.dart'; // Import Service
 import 'detail.dart';
 import 'wisma_int_general.dart'; 
 import 'wisma_eks_general.dart';
-import 'staff_notif.dart'; // Nama file disesuaikan dengan yang kita buat tadi
-import 'kelas_general.dart'; // Nama file formulir kelas general
+import 'staff_notif.dart'; 
+import 'kelas_general.dart'; 
 
 class DashboardAlternative extends StatefulWidget {
   const DashboardAlternative({super.key});
@@ -20,14 +20,9 @@ class DashboardAlternative extends StatefulWidget {
 class _DashboardAlternativeState extends State<DashboardAlternative> {
   static const Color primaryTeal = Color(0xFF008996);
   static const Color blueBoxColor = Color(0xffbfe0e6);
-
-  final List<ItemModel> wismaData = LocalData.items
-      .where((item) => item.type == ItemType.wisma)
-      .toList();
-
-  final List<ItemModel> kelasData = LocalData.items
-      .where((item) => item.type == ItemType.kelas)
-      .toList();
+  
+  // Panggil DatabaseService
+  final DatabaseService _db = DatabaseService();
 
   // Fungsi Pop-up Pilihan Jenis Pesanan Wisma (General)
   void _showBookingTypeDialog() {
@@ -92,138 +87,154 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff5f5f5),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. TOP HEADER
-            SizedBox(
-              width: double.infinity,
-              height: 80,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: SvgPicture.asset(
-                      'lib/assets/images/header_riwayat.svg',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: blueBoxColor.withOpacity(0.5),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+      body: StreamBuilder<List<ItemModel>>(
+        stream: _db.getItems(), // Mengambil data real-time dari Firestore
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: primaryTeal));
+          }
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  // 2. Row Sapaan & Notifikasi
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          if (snapshot.hasError) {
+            return const Center(child: Text("Gagal memuat data"));
+          }
+
+          final allItems = snapshot.data ?? [];
+          final wismaData = allItems.where((item) => item.type == ItemType.wisma).toList();
+          final kelasData = allItems.where((item) => item.type == ItemType.kelas).toList();
+
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. TOP HEADER
+                SizedBox(
+                  width: double.infinity,
+                  height: 80,
+                  child: Stack(
                     children: [
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Positioned.fill(
+                        child: SvgPicture.asset(
+                          'lib/assets/images/header_riwayat.svg',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: blueBoxColor.withOpacity(0.5),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+                      // 2. Row Sapaan & Notifikasi
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text("Selamat Datang,",
-                              style: TextStyle(fontSize: 14, color: Colors.black54)),
-                          Text(
-                            "PLN UPDL Makassar",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: primaryTeal,
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("Selamat Datang,",
+                                  style: TextStyle(fontSize: 14, color: Colors.black54)),
+                              Text(
+                                "PLN UPDL Makassar",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryTeal,
+                                ),
+                              ),
+                            ],
+                          ),
+                          InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const NotificationStaffPage()),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 5,
+                                    )
+                                  ]),
+                              child: const Icon(Icons.notifications_none, color: primaryTeal),
+                            ),
+                          )
+                        ],
+                      ),
+
+                      const SizedBox(height: 25),
+
+                      // 3. Dua Box Status (Booking Wisma & Kelas)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatBox(
+                              bgColor: blueBoxColor,
+                              title: "Pemesanan Wisma",
+                              svgPath: "lib/assets/images/rumahdpn.svg",
+                              imageOffset: -12.0,
+                              onTap: () => _showBookingTypeDialog(),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildStatBox(
+                              bgColor: const Color(0xffffd6d6),
+                              title: "Peminjaman Kelas",
+                              svgPath: "lib/assets/images/kelas_headerdash.svg",
+                              imageOffset: -12.0,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const FormKelasGeneral()),
+                                );
+                              },
                             ),
                           ),
                         ],
                       ),
-                      // ICON NOTIFIKASI DENGAN NAVIGASI
-                      InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const NotificationStaffPage()),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 5,
-                                )
-                              ]),
-                          child: const Icon(Icons.notifications_none, color: primaryTeal),
-                        ),
-                      )
+
+                      const SizedBox(height: 30),
+                      const Divider(color: Colors.black12, thickness: 1),
+                      const SizedBox(height: 10),
+
+                      _buildSectionHeader("Jenis Wisma"),
+                      const SizedBox(height: 12),
+                      _buildCarousel(wismaData),
+
+                      const SizedBox(height: 20),
+                      const Divider(color: Colors.black12, thickness: 1),
+                      const SizedBox(height: 10),
+
+                      _buildSectionHeader("Jenis Kelas"),
+                      const SizedBox(height: 12),
+                      _buildCarousel(kelasData),
+
+                      const SizedBox(height: 30),
                     ],
                   ),
-
-                  const SizedBox(height: 25),
-
-                  // 3. Dua Box Status (Booking Wisma & Kelas)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatBox(
-                          bgColor: blueBoxColor,
-                          title: "Pemesanan Wisma",
-                          svgPath: "lib/assets/images/rumahdpn.svg",
-                          imageOffset: -12.0,
-                          onTap: () => _showBookingTypeDialog(),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildStatBox(
-                          bgColor: const Color(0xffffd6d6),
-                          title: "Peminjaman Kelas",
-                          svgPath: "lib/assets/images/kelas_headerdash.svg",
-                          imageOffset: -12.0,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const FormKelasGeneral()),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 30),
-                  const Divider(color: Colors.black12, thickness: 1),
-                  const SizedBox(height: 10),
-
-                  _buildSectionHeader("Jenis Wisma"),
-                  const SizedBox(height: 12),
-                  _buildCarousel(wismaData),
-
-                  const SizedBox(height: 20),
-                  const Divider(color: Colors.black12, thickness: 1),
-                  const SizedBox(height: 10),
-
-                  _buildSectionHeader("Jenis Kelas"),
-                  const SizedBox(height: 12),
-                  _buildCarousel(kelasData),
-
-                  const SizedBox(height: 30),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
       bottomNavigationBar: CustomBottomNav(
         currentIndex: 0,
@@ -323,7 +334,11 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
               image: DecorationImage(
-                  image: AssetImage(item.imagePath), fit: BoxFit.cover),
+                  // Mendukung network image dari Firestore atau local asset
+                  image: item.imagePath.startsWith('http') 
+                      ? NetworkImage(item.imagePath) as ImageProvider
+                      : AssetImage(item.imagePath), 
+                  fit: BoxFit.cover),
             ),
             child: Container(
               decoration: BoxDecoration(

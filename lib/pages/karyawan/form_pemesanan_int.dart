@@ -5,6 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../models/item_model.dart';
 import '../../models/room_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/database_service.dart';
+import '../../models/booking_model.dart';
 
 class FormWismaInternalPage extends StatefulWidget {
   final RoomModel room;
@@ -22,6 +25,8 @@ class FormWismaInternalPage extends StatefulWidget {
 
 class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
   final _formKey = GlobalKey<FormState>();
+  final DatabaseService _db = DatabaseService();
+  bool _isSubmitting = false;
 
   static const Color softTeal = Color(0xFFE8F1F3);
   static const Color primaryTeal = Color(0xFF008996);
@@ -120,6 +125,42 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
     );
   }
 
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate() && selectedDate != null) {
+      setState(() => _isSubmitting = true);
+      
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) return;
+
+        final newBooking = BookingModel(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          userId: user.uid,
+          userName: namaController.text.trim(),
+          roomIds: [widget.room.id],
+          itemName: widget.item.title,
+          start: selectedDate!.start,
+          end: selectedDate!.end,
+          totalPayment: totalHarga.toDouble(),
+          status: BookingStatus.pending,
+          paymentProof: suratTugas?.path,
+        );
+
+        await _db.createBooking(newBooking, widget.item.id);
+
+        if (!mounted) return;
+        _showSuccessDialog();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        );
+      } finally {
+        if (mounted) setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -129,7 +170,6 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. HEADER DENGAN GAMBAR DAN TOMBOL BACK
               Stack(
                 children: [
                   SizedBox(
@@ -151,8 +191,6 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
                   ),
                 ],
               ),
-
-              // 2. JUDUL DAN SUBJUDUL SEJAJAR FIELD
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
                 child: Column(
@@ -170,8 +208,6 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
                   ],
                 ),
               ),
-
-              // 3. FORM BODY
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Form(
@@ -179,16 +215,13 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // DATA DIRI
                       _buildField("Nama Lengkap", namaController, Icons.person_outline),
                       _buildField("Nomor Induk Kependudukan (NIK)", nikController, Icons.badge_outlined, TextInputType.number),
                       _buildField("Nomor Induk Pegawai (NIP)", nipController, Icons.work_outline, TextInputType.number, false),
                       
-                      // UNGGAH SURAT TUGAS
                       _buildUploadBox("Unggah Surat Tugas", suratTugas != null, _pickSurat),
                       
                       const SizedBox(height: 30),
-                      // JUMLAH TAMU
                       const Text("Jumlah Tamu", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 16),
                       Row(
@@ -198,8 +231,6 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
                           Expanded(child: _buildField("Laki-laki", lakiController, Icons.male_outlined, TextInputType.number)),
                         ],
                       ),
-
-                      // PERIODE TANGGAL
                       _buildDateRangeField(),
                       const SizedBox(height: 24),
                       
@@ -210,16 +241,22 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
                         width: double.infinity,
                         height: 55,
                         child: ElevatedButton(
-                          onPressed: _submitForm,
+                          onPressed: _isSubmitting ? null : _submitForm,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryTeal,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            "Pesan Sekarang",
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
+                          child: _isSubmitting 
+                            ? const SizedBox(
+                                height: 20, 
+                                width: 20, 
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                              )
+                            : const Text(
+                                "Pesan Sekarang",
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
                         ),
                       ),
                       const SizedBox(height: 50),
@@ -354,11 +391,5 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
   Future<void> _pickSurat() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (picked != null) setState(() => suratTugas = File(picked.path));
-  }
-
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      _showSuccessDialog();
-    }
   }
 }

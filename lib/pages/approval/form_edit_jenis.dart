@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Tambah ini
 import '../../models/item_model.dart';
-import '../../data/exsistingdata.dart';
+import '../../services/database_service.dart'; // Tambah ini
 
 class FormEditJenis extends StatefulWidget {
   final ItemType type;
@@ -13,26 +14,50 @@ class FormEditJenis extends StatefulWidget {
 
 class _FormEditJenisState extends State<FormEditJenis> {
   final _formKey = GlobalKey<FormState>();
+  final DatabaseService _db = DatabaseService(); // Inisialisasi Service
+  
   static const Color primaryTeal = Color(0xFF008996);
-  static const Color blueBoxColor = Color(0xffbfe0e6); 
   
   ItemModel? selectedItem;
   final TextEditingController nameController = TextEditingController();
   final TextEditingController descController = TextEditingController();
-
-  late List<ItemModel> filteredItems;
-
-  @override
-  void initState() {
-    super.initState();
-    filteredItems = LocalData.items.where((item) => item.type == widget.type).toList();
-  }
+  bool _isLoading = false;
 
   @override
   void dispose() {
     nameController.dispose();
     descController.dispose();
     super.dispose();
+  }
+
+  // FUNGSI UPDATE DATA KE FIRESTORE
+  Future<void> _updateData() async {
+    if (_formKey.currentState!.validate() && selectedItem != null) {
+      setState(() => _isLoading = true);
+      
+      try {
+        await FirebaseFirestore.instance
+            .collection('items')
+            .doc(selectedItem!.id)
+            .update({
+          'title': nameController.text.trim(),
+          'description': descController.text.trim(),
+        });
+
+        if (!mounted) return;
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Data berhasil diperbarui"), backgroundColor: Colors.green),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal memperbarui: $e"), backgroundColor: Colors.red),
+        );
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -67,18 +92,28 @@ class _FormEditJenisState extends State<FormEditJenis> {
                 ),
                 const SizedBox(height: 10),
 
-                _buildDropdownField(),
+                // MENGGUNAKAN STREAMBUILDER AGAR DATA DROPDOWN REAL-TIME
+                StreamBuilder<List<ItemModel>>(
+                  stream: _db.getItems(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) return const CircularProgressIndicator();
+                    
+                    final filteredItems = snapshot.data!
+                        .where((item) => item.type == widget.type)
+                        .toList();
+
+                    return _buildDropdownField(filteredItems);
+                  }
+                ),
                 
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 15),
                   child: Divider(),
                 ),
 
-                // FIELD NAMA BARU
                 _buildTextField(nameController, "Nama Baru", Icons.edit_note_outlined),
                 const SizedBox(height: 15),
 
-                // FIELD DESKRIPSI BARU
                 _buildTextField(
                   descController, 
                   "Deskripsi Baru", 
@@ -88,7 +123,6 @@ class _FormEditJenisState extends State<FormEditJenis> {
 
                 const SizedBox(height: 25),
 
-                // BUTTON SIMPAN
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryTeal,
@@ -96,19 +130,13 @@ class _FormEditJenisState extends State<FormEditJenis> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     elevation: 0,
                   ),
-                  onPressed: () {
-                    if (_formKey.currentState!.validate() && selectedItem != null) {
-                      Navigator.pop(context, true);
-                    } else if (selectedItem == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Pilih data terlebih dahulu")),
-                      );
-                    }
-                  },
-                  child: const Text(
-                    "Simpan Perubahan", 
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
-                  ),
+                  onPressed: _isLoading ? null : _updateData,
+                  child: _isLoading 
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text(
+                        "Simpan Perubahan", 
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+                      ),
                 ),
               ],
             ),
@@ -118,7 +146,7 @@ class _FormEditJenisState extends State<FormEditJenis> {
     );
   }
 
-  Widget _buildDropdownField() {
+  Widget _buildDropdownField(List<ItemModel> items) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -135,8 +163,10 @@ class _FormEditJenisState extends State<FormEditJenis> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           hint: const Text("Pilih Nama"),
-          value: selectedItem,
-          items: filteredItems.map((item) {
+          value: selectedItem != null 
+              ? items.firstWhere((element) => element.id == selectedItem!.id, orElse: () => items.first) 
+              : null,
+          items: items.map((item) {
             return DropdownMenuItem(
               value: item,
               child: Text(item.title, style: const TextStyle(fontSize: 14)),

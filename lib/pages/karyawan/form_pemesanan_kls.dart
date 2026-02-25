@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Tambah ini
 import '../../models/item_model.dart';
 import '../../models/room_model.dart';
+import '../../models/booking_model.dart'; // Tambah ini
+import '../../services/database_service.dart'; // Tambah ini
 
 class FormKelasPage extends StatefulWidget {
   final RoomModel room;
@@ -22,8 +25,10 @@ class FormKelasPage extends StatefulWidget {
 
 class _FormKelasPageState extends State<FormKelasPage> {
   final _formKey = GlobalKey<FormState>();
+  final DatabaseService _db = DatabaseService(); // Inisialisasi Service
+  bool _isSubmitting = false; // State untuk loading
 
-  static const Color softTeal = Color(0xFFE8F1F3);
+  // static const Color softTeal = Color(0xFFE8F1F3);
   static const Color primaryTeal = Color(0xFF008996);
 
   final namaController = TextEditingController();
@@ -53,7 +58,7 @@ class _FormKelasPageState extends State<FormKelasPage> {
           (r) =>
               r.capacity >= inputTamu &&
               r.name != widget.room.name &&
-              r.condition == RoomCondition.normal,
+              r.condition == RoomCondition.kosong, // Sesuaikan dengan enum terbaru
         );
         setState(() => recommendedRoom = alternative);
       } catch (e) {
@@ -62,6 +67,105 @@ class _FormKelasPageState extends State<FormKelasPage> {
     } else {
       setState(() => recommendedRoom = null);
     }
+  }
+
+  // FUNGSI SIMPAN DATA KE FIREBASE
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate() && selectedDate != null) {
+      setState(() => _isSubmitting = true);
+
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) throw "User tidak terautentikasi";
+
+        // Buat objek booking khusus kelas
+        final newBooking = BookingModel(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          userId: user.uid,
+          userName: namaController.text.trim(),
+          roomIds: [widget.room.id],
+          itemName: widget.item.title,
+          start: selectedDate!.start,
+          end: selectedDate!.end,
+          totalPayment: 0, // Kelas biasanya gratis
+          status: BookingStatus.pending,
+          paymentProof: suratTugas?.path, // Surat tugas sebagai bukti
+        );
+
+        // Kirim ke database
+        await _db.createBooking(newBooking, widget.item.id);
+
+        if (!mounted) return;
+        _showSuccessDialog();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal mengirim: $e"), backgroundColor: Colors.red),
+        );
+      } finally {
+        if (mounted) setState(() => _isSubmitting = false);
+      }
+    } else if (selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Silakan pilih tanggal peminjaman")),
+      );
+    }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 60),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  "Berhasil Dikirim!",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "Permohonan peminjaman ruang kelas telah berhasil dikirim. Silakan cek status reservasi Anda secara berkala.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.5),
+                ),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Tutup dialog
+                      Navigator.pop(context, true); // Kembali ke Detail
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryTeal,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: const Text("Tutup", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -73,10 +177,9 @@ class _FormKelasPageState extends State<FormKelasPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Custom Top Bar dengan Gambar dan Navigasi
+              // 1. Custom Top Bar (Layout Tetap)
               Column(
                 children: [
-                  // Area Gambar Header (Tinggi 70)
                   SizedBox(
                     width: double.infinity,
                     height: 70, 
@@ -85,7 +188,6 @@ class _FormKelasPageState extends State<FormKelasPage> {
                       fit: BoxFit.cover,
                     ),
                   ),
-                  // Area Tombol Back dan Judul
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     child: Row(
@@ -160,20 +262,26 @@ class _FormKelasPageState extends State<FormKelasPage> {
                         width: double.infinity,
                         height: 55,
                         child: ElevatedButton(
-                          onPressed: _submitForm,
+                          onPressed: _isSubmitting ? null : _submitForm,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryTeal,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16)),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            "Pesan Sekarang",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16),
-                          ),
+                          child: _isSubmitting 
+                            ? const SizedBox(
+                                height: 20, 
+                                width: 20, 
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                              )
+                            : const Text(
+                                "Pesan Sekarang",
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16),
+                              ),
                         ),
                       ),
                       const SizedBox(height: 50),
@@ -188,6 +296,7 @@ class _FormKelasPageState extends State<FormKelasPage> {
     );
   }
 
+  // Widget Helper tetap sama persis layoutnya
   Widget _buildField({
     required String label,
     required TextEditingController controller,
@@ -359,11 +468,5 @@ class _FormKelasPageState extends State<FormKelasPage> {
   Future<void> _pickSurat() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (picked != null) setState(() => suratTugas = File(picked.path));
-  }
-
-  void _submitForm() {
-    if (_formKey.currentState!.validate() && selectedDate != null) {
-      Navigator.pop(context, true);
-    }
   }
 }

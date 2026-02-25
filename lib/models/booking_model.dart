@@ -1,11 +1,68 @@
+enum BookingStatus { pending, approved, rejected, refundProcess, completed }
+
 class BookingModel {
-  String roomName;
-  DateTime start;
-  DateTime end;
+  final String id;
+  final String userId;
+  final String userName;
+  final List<String> roomIds;
+  final String itemName;
+  final DateTime start;
+  final DateTime end;
+  final double totalPayment;
+  final String? paymentProof;
+  BookingStatus status;
+  final String? accountNumber;
+  final String? rejectReason;
 
   BookingModel({
-    required this.roomName,
+    required this.id,
+    required this.userId,
+    required this.userName,
+    required this.roomIds,
+    required this.itemName,
     required this.start,
     required this.end,
+    required this.totalPayment,
+    this.paymentProof,
+    this.status = BookingStatus.pending,
+    this.accountNumber,
+    this.rejectReason,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'userId': userId,
+      'userName': userName,
+      'roomIds': roomIds,
+      'itemName': itemName,
+      'start': start.toIso8601String(),
+      'end': end.toIso8601String(),
+      'totalPayment': totalPayment,
+      'paymentProof': paymentProof,
+      'status': status.name,
+      'accountNumber': accountNumber,
+      'rejectReason': rejectReason,
+    };
+  }
+
+  factory BookingModel.fromMap(String id, Map<String, dynamic> map) {
+    return BookingModel(
+      id: id,
+      userId: map['userId'] ?? '',
+      userName: map['userName'] ?? '',
+      roomIds: List<String>.from(map['roomIds'] ?? []),
+      itemName: map['itemName'] ?? '',
+      start: DateTime.parse(map['start']),
+      end: DateTime.parse(map['end']),
+      totalPayment: (map['totalPayment'] ?? 0).toDouble(),
+      paymentProof: map['paymentProof'],
+      status: BookingStatus.values.firstWhere(
+        (e) => e.name == map['status'],
+        orElse: () => BookingStatus.pending,
+      ),
+      accountNumber: map['accountNumber'],
+      rejectReason: map['rejectReason'],
+    );
+  }
 }

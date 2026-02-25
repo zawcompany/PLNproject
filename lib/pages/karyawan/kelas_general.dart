@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Tambahkan ini
+import 'package:firebase_auth/firebase_auth.dart'; // Tambahkan ini
 import '../../models/item_model.dart';
 import '../../models/room_model.dart';
-import '../../data/exsistingdata.dart';
-import '../../data/booking_data.dart';
+import '../../models/booking_model.dart'; // Tambahkan ini
+import '../../services/database_service.dart'; // Tambahkan ini
 
 class FormKelasGeneral extends StatefulWidget {
   const FormKelasGeneral({super.key});
@@ -17,6 +19,8 @@ class FormKelasGeneral extends StatefulWidget {
 
 class _FormKelasGeneralState extends State<FormKelasGeneral> {
   final _formKey = GlobalKey<FormState>();
+  final DatabaseService _db = DatabaseService(); // Inisialisasi Service
+  
   static const Color primaryTeal = Color(0xFF008996);
   static const Color softTeal = Color(0xFFE8F1F3);
   static const Color softred = Color(0xffffd6d6);
@@ -30,6 +34,7 @@ class _FormKelasGeneralState extends State<FormKelasGeneral> {
   DateTimeRange? selectedDate;
   File? suratTugas;
   List<RoomModel> selectedRooms = [];
+  bool _isSubmitting = false; // State loading
 
   @override
   void dispose() {
@@ -41,13 +46,57 @@ class _FormKelasGeneralState extends State<FormKelasGeneral> {
     super.dispose();
   }
 
+  // Cek ketersediaan berdasarkan status di database
   bool isRoomAvailable(RoomModel room) {
-    if (selectedDate == null) return false;
-    bool isUsed = BookingData.bookings.any((b) =>
-        b.roomName == room.name &&
-        (selectedDate!.start.isBefore(b.end) && selectedDate!.end.isAfter(b.start)));
+    return room.condition == RoomCondition.kosong;
+  }
+
+  // FUNGSI UTAMA: SIMPAN KE FIREBASE & UPDATE STATUS KELAS
+  Future<void> _submitGeneralKelasBooking() async {
+    if (selectedRooms.isEmpty || suratTugas == null) return;
     
-    return !isUsed && room.condition == RoomCondition.normal;
+    setState(() => _isSubmitting = true);
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw "User tidak ditemukan";
+
+      // 1. Siapkan Objek Booking
+      final newBooking = BookingModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        userId: user.uid,
+        userName: namaController.text.trim(),
+        roomIds: selectedRooms.map((r) => r.id).toList(), 
+        itemName: "Peminjaman Kelas General (${selectedRooms.length} Ruangan)",
+        start: selectedDate!.start,
+        end: selectedDate!.end,
+        totalPayment: 0, // Kelas biasanya tidak berbayar
+        status: BookingStatus.pending,
+        paymentProof: suratTugas!.path, // Surat tugas sebagai bukti
+      );
+
+      // 2. Update status semua kamar yang dipilih menjadi TERISI di Firestore
+      final snapshot = await FirebaseFirestore.instance.collection('items').get();
+      final allItems = snapshot.docs.map((doc) => ItemModel.fromMap(doc.id, doc.data())).toList();
+
+      for (var room in selectedRooms) {
+        final parentItem = allItems.firstWhere((item) => item.rooms.any((r) => r.id == room.id));
+        await _db.updateRoomCondition(parentItem.id, room.name, RoomCondition.terisi);
+      }
+
+      // 3. Simpan dokumen booking utama
+      await FirebaseFirestore.instance.collection('bookings').doc(newBooking.id).set(newBooking.toMap());
+
+      if (!mounted) return;
+      _showSuccessDialog();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal memproses: $e"), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   void _showKelasSelection() {
@@ -66,107 +115,104 @@ class _FormKelasGeneralState extends State<FormKelasGeneral> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            // Ambil semua data kelas
-            final allKelasItems = LocalData.items.where((item) => item.type == ItemType.kelas).toList();
-            
-            // Nama-nama yang ingin digabung ke "Kelas Lainnya"
-            const specialRooms = ["Aula", "Lab B", "Kelas Toddopuli"];
+            return StreamBuilder<List<ItemModel>>(
+              stream: _db.getItems(), // Ambil data real-time
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                
+                final allKelasItems = snapshot.data!.where((item) => item.type == ItemType.kelas).toList();
+                const specialRooms = ["Aula", "Lab B", "Kelas Toddopuli"];
+                final regulerKelas = allKelasItems.where((item) => !specialRooms.contains(item.title)).toList();
+                final otherRoomsList = allKelasItems
+                    .where((item) => specialRooms.contains(item.title))
+                    .expand((item) => item.rooms)
+                    .toList();
 
-            // Filter item yang merupakan kelas reguler
-            final regulerKelas = allKelasItems.where((item) => !specialRooms.contains(item.title)).toList();
-            
-            // Ambil semua room dari item yang judulnya ada di specialRooms
-            final otherRoomsList = allKelasItems
-                .where((item) => specialRooms.contains(item.title))
-                .expand((item) => item.rooms)
-                .toList();
-
-            return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              backgroundColor: Colors.white,
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start, // Rata Kiri Header
-                  children: [
-                    Row(
+                return Dialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  backgroundColor: Colors.white,
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: primaryTeal.withOpacity(0.1), shape: BoxShape.circle),
-                          child: const Icon(Icons.meeting_room_rounded, color: primaryTeal, size: 22),
-                        ),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start, // Rata Kiri Teks Header
-                            children: [
-                              Text("Pilih Ruang Kelas", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              Text("Pilih satu atau beberapa kelas", style: TextStyle(color: Colors.grey, fontSize: 11)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start, // Rata Kiri Konten
+                        Row(
                           children: [
-                            // 1. Tampilkan Kelas Reguler (A, B, dst)
-                            ...regulerKelas.map((item) {
-                              return Column(
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(color: primaryTeal.withValues(alpha: 0.1), shape: BoxShape.circle),
+                              child: const Icon(Icons.meeting_room_rounded, color: primaryTeal, size: 22),
+                            ),
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Text("Pilih Ruang Kelas", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  Text("Pilih satu atau beberapa kelas", style: TextStyle(color: Colors.grey, fontSize: 11)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ...regulerKelas.map((item) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                      const SizedBox(height: 8),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 4,
+                                        children: item.rooms.map((room) {
+                                          return _buildRoomChip(room, item.title, setDialogState);
+                                        }).toList(),
+                                      ),
+                                      const SizedBox(height: 16),
+                                    ],
+                                  );
+                                }),
+                                if (otherRoomsList.isNotEmpty) ...[
+                                  const Text("Kelas Lainnya", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                   const SizedBox(height: 8),
                                   Wrap(
                                     spacing: 8,
                                     runSpacing: 4,
-                                    children: item.rooms.map((room) {
-                                      return _buildRoomChip(room, item.title, setDialogState);
+                                    children: otherRoomsList.map((room) {
+                                      return _buildRoomChip(room, "Kelas Lainnya", setDialogState);
                                     }).toList(),
                                   ),
                                   const SizedBox(height: 16),
                                 ],
-                              );
-                            }),
-
-                            // 2. Tampilkan Gabungan Kelas Lainnya
-                            if (otherRoomsList.isNotEmpty) ...[
-                              const Text("Kelas Lainnya", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 4,
-                                children: otherRoomsList.map((room) {
-                                  return _buildRoomChip(room, "Kelas Lainnya", setDialogState);
-                                }).toList(),
-                              ),
-                              const SizedBox(height: 16),
-                            ],
-                          ],
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryTeal,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        const SizedBox(height: 15),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryTeal,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            child: const Text("Selesai", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
                         ),
-                        child: const Text("Selesai", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              }
             );
           },
         );
@@ -176,10 +222,8 @@ class _FormKelasGeneralState extends State<FormKelasGeneral> {
 
   Widget _buildRoomChip(RoomModel room, String categoryTitle, StateSetter setDialogState) {
     final bool available = isRoomAvailable(room);
-    final bool isSelected = selectedRooms.any((r) => r.name == room.name);
+    final bool isSelected = selectedRooms.any((r) => r.id == room.id);
     
-    // Jika kategori "Kelas Lainnya", tampilkan nama asli (Aula, Lab B, dst)
-    // Jika reguler, hilangkan nama kategorinya (tampil angka saja)
     String displayNumber = categoryTitle == "Kelas Lainnya" 
         ? room.name 
         : room.name.replaceAll(categoryTitle, "").trim();
@@ -192,7 +236,7 @@ class _FormKelasGeneralState extends State<FormKelasGeneral> {
           if (selected) {
             selectedRooms.add(room);
           } else {
-            selectedRooms.removeWhere((r) => r.name == room.name);
+            selectedRooms.removeWhere((r) => r.id == room.id);
           }
         });
         setState(() {}); 
@@ -229,7 +273,7 @@ class _FormKelasGeneralState extends State<FormKelasGeneral> {
                 const Text("Permohonan Terkirim!", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
                 const Text(
-                  "Permohonan berhasil dikirim dan menunggu verifikasi.",
+                  "Permohonan peminjaman kelas berhasil dikirim dan status ruangan telah diperbarui.",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.5),
                 ),
@@ -291,9 +335,9 @@ class _FormKelasGeneralState extends State<FormKelasGeneral> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Formulir Pinjam Kelas", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const Text("Formulir Pinjam Kelas General", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 2),
-                    const Text("Lengkapi data untuk peminjaman ruang kelas", style: TextStyle(fontSize: 13, color: Colors.grey)),
+                    const Text("Lengkapi data untuk peminjaman beberapa ruang kelas sekaligus", style: TextStyle(fontSize: 13, color: Colors.grey)),
                   ],
                 ),
               ),
@@ -355,13 +399,17 @@ class _FormKelasGeneralState extends State<FormKelasGeneral> {
                       SizedBox(
                         width: double.infinity, height: 55,
                         child: ElevatedButton(
-                          onPressed: (selectedRooms.isNotEmpty && suratTugas != null) ? _showSuccessDialog : null,
+                          onPressed: (selectedRooms.isNotEmpty && suratTugas != null && !_isSubmitting) 
+                            ? _submitGeneralKelasBooking 
+                            : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryTeal,
                             disabledBackgroundColor: Colors.grey[300],
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
-                          child: const Text("Konfirmasi Pinjam Kelas", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                          child: _isSubmitting 
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Text("Konfirmasi Pinjam Kelas", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                         ),
                       ),
                       const SizedBox(height: 50),
@@ -376,6 +424,7 @@ class _FormKelasGeneralState extends State<FormKelasGeneral> {
     );
   }
 
+  // Widget Helper tetap sama secara visual
   Widget _buildField(String label, TextEditingController controller, IconData icon, [TextInputType type = TextInputType.text]) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),

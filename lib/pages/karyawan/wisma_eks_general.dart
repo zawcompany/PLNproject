@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Fixed: Import Firestore
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/item_model.dart';
 import '../../models/room_model.dart';
+import '../../models/booking_model.dart'; 
+import '../../services/database_service.dart'; 
 import '../../data/exsistingdata.dart';
-import '../../data/booking_data.dart';
 
 class FormWismaGeneralEksternal extends StatefulWidget {
   const FormWismaGeneralEksternal({super.key});
@@ -17,6 +20,8 @@ class FormWismaGeneralEksternal extends StatefulWidget {
 
 class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
   final _formKey = GlobalKey<FormState>();
+  final DatabaseService _db = DatabaseService(); 
+  
   static const Color primaryTeal = Color(0xFF008996);
   static const Color softTeal = Color(0xFFE8F1F3);
   static const Color softred = Color(0xffffd6d6);
@@ -32,6 +37,7 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
   DateTimeRange? selectedDate;
   File? buktiPembayaran;
   List<RoomModel> selectedRooms = [];
+  bool _isSubmitting = false; 
 
   final currency = NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0);
 
@@ -46,7 +52,6 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
     super.dispose();
   }
 
-  // Hitung total harga berdasarkan jumlah wisma dan durasi hari
   int get totalHarga {
     if (selectedDate == null || selectedRooms.isEmpty) return 0;
     final totalDays = selectedDate!.end.difference(selectedDate!.start).inDays + 1;
@@ -60,12 +65,56 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
   }
 
   bool isRoomAvailable(RoomModel room) {
-    if (selectedDate == null) return false;
-    bool isUsed = BookingData.bookings.any((b) =>
-        b.roomName == room.name &&
-        (selectedDate!.start.isBefore(b.end) && selectedDate!.end.isAfter(b.start)));
+    // Status fisik dibaca dari model yang datang dari Firestore
+    return room.condition == RoomCondition.kosong;
+  }
+
+  Future<void> _submitGeneralBooking() async {
+    if (selectedRooms.isEmpty || buktiPembayaran == null) return;
     
-    return !isUsed && room.condition == RoomCondition.normal;
+    setState(() => _isSubmitting = true);
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw "User tidak ditemukan";
+
+      // 1. Siapkan Objek Booking
+      final newBooking = BookingModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        userId: user.uid,
+        userName: namaController.text.trim(),
+        roomIds: selectedRooms.map((r) => r.id).toList(), 
+        itemName: "Pemesanan General (${selectedRooms.length} Kamar)",
+        start: selectedDate!.start,
+        end: selectedDate!.end,
+        totalPayment: totalHarga.toDouble(),
+        status: BookingStatus.pending,
+        paymentProof: buktiPembayaran!.path,
+      );
+
+      // 2. Loop update status kamar di Wisma masing-masing menjadi TERISI
+      // Kita butuh data items terbaru untuk mencocokkan room dengan parent item-nya
+      final snapshot = await FirebaseFirestore.instance.collection('items').get();
+      final allItems = snapshot.docs.map((doc) => ItemModel.fromMap(doc.id, doc.data())).toList();
+
+      for (var room in selectedRooms) {
+        final parentWisma = allItems.firstWhere((item) => item.rooms.any((r) => r.id == room.id));
+        await _db.updateRoomCondition(parentWisma.id, room.name, RoomCondition.terisi);
+      }
+
+      // 3. Simpan dokumen booking utama
+      await FirebaseFirestore.instance.collection('bookings').doc(newBooking.id).set(newBooking.toMap());
+
+      if (!mounted) return;
+      _showSuccessDialog();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal memproses pesanan: $e"), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   void _showWismaSelection() {
@@ -84,98 +133,106 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            final allWismaItems = LocalData.items.where((item) => item.type == ItemType.wisma).toList();
+            // Mengambil data Wisma secara real-time untuk pemilihan kamar
+            return StreamBuilder<List<ItemModel>>(
+              stream: _db.getItems(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                
+                final allWismaItems = snapshot.data!.where((item) => item.type == ItemType.wisma).toList();
 
-            return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              backgroundColor: Colors.white,
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                return Dialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  backgroundColor: Colors.white,
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: primaryTeal.withOpacity(0.1), shape: BoxShape.circle),
-                          child: const Icon(Icons.home_work_rounded, color: primaryTeal, size: 22),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(color: primaryTeal.withValues(alpha: 0.1), shape: BoxShape.circle),
+                              child: const Icon(Icons.home_work_rounded, color: primaryTeal, size: 22),
+                            ),
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text("Pilih Wisma", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  Text("Klik nomor kamar untuk memilih", style: TextStyle(color: Colors.grey, fontSize: 11)),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Pilih Wisma", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              Text("Pilih wisma yang tersedia", style: TextStyle(color: Colors.grey, fontSize: 11)),
-                            ],
+                        const SizedBox(height: 20),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children: allWismaItems.map((item) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 4,
+                                      children: item.rooms.map((room) {
+                                        final bool available = isRoomAvailable(room);
+                                        final bool isSelected = selectedRooms.any((r) => r.id == room.id);
+                                        String displayNumber = room.name.replaceAll(item.title, "").trim();
+
+                                        return FilterChip(
+                                          label: Text(displayNumber),
+                                          selected: isSelected,
+                                          onSelected: available ? (bool selected) {
+                                            setDialogState(() {
+                                              if (selected) {
+                                                selectedRooms.add(room);
+                                              } else {
+                                                selectedRooms.removeWhere((r) => r.id == room.id);
+                                              }
+                                            });
+                                            setState(() {}); 
+                                          } : null,
+                                          labelStyle: TextStyle(
+                                            fontSize: 12,
+                                            color: isSelected ? Colors.white : (available ? Colors.black87 : Colors.grey),
+                                          ),
+                                          selectedColor: primaryTeal,
+                                          checkmarkColor: Colors.white,
+                                          backgroundColor: available ? Colors.grey[100] : Colors.grey[300],
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        );
+                                      }).toList(),
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: ElevatedButton.styleFrom(backgroundColor: primaryTeal, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                            child: const Text("Selesai", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: allWismaItems.map((item) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 4,
-                                  children: item.rooms.map((room) {
-                                    final bool available = isRoomAvailable(room);
-                                    final bool isSelected = selectedRooms.any((r) => r.name == room.name);
-                                    String displayNumber = room.name.replaceAll(item.title, "").trim();
-
-                                    return FilterChip(
-                                      label: Text(displayNumber),
-                                      selected: isSelected,
-                                      onSelected: available ? (bool selected) {
-                                        setDialogState(() {
-                                          if (selected) {
-                                            selectedRooms.add(room);
-                                          } else {
-                                            selectedRooms.removeWhere((r) => r.name == room.name);
-                                          }
-                                        });
-                                        setState(() {}); 
-                                      } : null,
-                                      labelStyle: TextStyle(
-                                        fontSize: 12,
-                                        color: isSelected ? Colors.white : (available ? Colors.black87 : Colors.grey),
-                                      ),
-                                      selectedColor: primaryTeal,
-                                      checkmarkColor: Colors.white,
-                                      backgroundColor: available ? Colors.grey[100] : Colors.grey[300],
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    );
-                                  }).toList(),
-                                ),
-                                const SizedBox(height: 16),
-                              ],
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(backgroundColor: primaryTeal, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                        child: const Text("Selesai", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              }
             );
           },
         );
@@ -198,14 +255,14 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
               const SizedBox(height: 20),
               const Text("Pesanan Berhasil!", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
-              const Text("Permohonan reservasi eksternal Anda telah dikirim dan sedang diproses.", textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Colors.grey)),
+              const Text("Pemesanan general Anda telah masuk ke sistem. Status kamar telah diperbarui.", textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Colors.grey)),
               const SizedBox(height: 25),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context); // Close dialog
-                    Navigator.pop(context, true); // Back to Dash
+                    Navigator.pop(context); 
+                    Navigator.pop(context, true); 
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: primaryTeal, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   child: const Text("Tutup", style: TextStyle(color: Colors.white)),
@@ -251,9 +308,9 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Formulir Reservasi Eksternal", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const Text("Formulir Reservasi General", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 2),
-                    const Text("Lengkapi data pemesanan tamu umum", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const Text("Lengkapi data pemesanan untuk beberapa wisma sekaligus", style: TextStyle(fontSize: 12, color: Colors.grey)),
                   ],
                 ),
               ),
@@ -320,13 +377,15 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
                       SizedBox(
                         width: double.infinity, height: 55,
                         child: ElevatedButton(
-                          onPressed: (selectedRooms.isNotEmpty && buktiPembayaran != null) ? _showSuccessDialog : null,
+                          onPressed: (selectedRooms.isNotEmpty && buktiPembayaran != null && !_isSubmitting) ? _submitGeneralBooking : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryTeal,
                             disabledBackgroundColor: Colors.grey[300],
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
-                          child: const Text("Konfirmasi Pesanan", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                          child: _isSubmitting 
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Text("Konfirmasi Pesanan", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                         ),
                       ),
                       const SizedBox(height: 50),
@@ -395,7 +454,11 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
   Widget _buildTotalCard() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: softTeal, borderRadius: BorderRadius.circular(16), border: Border.all(color: blueBoxColor)),
+      decoration: BoxDecoration(
+        color: softTeal, 
+        borderRadius: BorderRadius.circular(16), 
+        border: Border.all(color: blueBoxColor)
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -408,13 +471,19 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
 
   Widget _buildRekeningCard() {
     return Container(
-      width: double.infinity, padding: const EdgeInsets.all(16),
+      width: double.infinity, 
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: primaryTeal, borderRadius: BorderRadius.circular(12)),
       child: const Row(
         children: [
           Icon(Icons.account_balance_wallet_outlined, color: Colors.white),
           SizedBox(width: 12),
-          Expanded(child: Text("Bank BRI\n033901000171301\nReceipt PT. PLN", style: TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.w500))),
+          Expanded(
+            child: Text(
+              "Bank BRI\n033901000171301\nReceipt PT. PLN", 
+              style: TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.w500)
+            )
+          ),
         ],
       ),
     );
@@ -429,9 +498,16 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
         InkWell(
           onTap: onTap,
           child: Container(
-            width: double.infinity, height: 55,
-            decoration: BoxDecoration(color: isFileSelected ? const Color(0xFFE8F5E9) : const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(12)),
-            child: Icon(isFileSelected ? Icons.check_circle : Icons.file_upload_outlined, color: isFileSelected ? Colors.green : Colors.grey),
+            width: double.infinity, 
+            height: 55,
+            decoration: BoxDecoration(
+              color: isFileSelected ? const Color(0xFFE8F5E9) : const Color(0xFFF5F5F5), 
+              borderRadius: BorderRadius.circular(12)
+            ),
+            child: Icon(
+              isFileSelected ? Icons.check_circle : Icons.file_upload_outlined, 
+              color: isFileSelected ? Colors.green : Colors.grey
+            ),
           ),
         ),
       ],
