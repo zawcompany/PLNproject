@@ -19,7 +19,7 @@ class NotificationApprovalPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. HEADER (Layout Tetap)
+            // 1. HEADER
             Stack(
               children: [
                 SizedBox(
@@ -46,12 +46,12 @@ class NotificationApprovalPage extends StatelessWidget {
             ),
 
             // 2. JUDUL
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     "Notifikasi Approval",
                     style: TextStyle(
                       fontSize: 18, 
@@ -59,14 +59,11 @@ class NotificationApprovalPage extends StatelessWidget {
                       color: primaryTeal,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Pantau pengajuan masuk dan laporan dari staff",
-                    style: TextStyle(
-                      fontSize: 12, 
-                      color: Colors.grey[600],
-                    ),
-                  ),
+                  SizedBox(height: 4),
+                  // Text(
+                  //   "Pantau pengajuan masuk dan laporan dari staff",
+                  //   style: TextStyle(fontSize: 12, color: Colors.grey),
+                  // ),
                 ],
               ),
             ),
@@ -74,7 +71,6 @@ class NotificationApprovalPage extends StatelessWidget {
             // 3. DAFTAR NOTIFIKASI REAL-TIME
             Expanded(
               child: StreamBuilder<List<dynamic>>(
-                // Menggabungkan stream Booking dan Complaint menggunakan RxDart
                 stream: CombineLatestStream.list([
                   FirebaseFirestore.instance.collection('bookings').snapshots(),
                   FirebaseFirestore.instance.collection('complaints').snapshots(),
@@ -84,23 +80,26 @@ class NotificationApprovalPage extends StatelessWidget {
                     return const Center(child: CircularProgressIndicator(color: primaryTeal));
                   }
 
-                  if (!snapshot.hasData) {
+                  if (!snapshot.hasData || snapshot.data == null) {
                     return const Center(child: Text("Tidak ada notifikasi"));
                   }
 
-                  // Mengolah data Booking
-                  final bookingDocs = snapshot.data![0] as QuerySnapshot;
-                  List<dynamic> allNotifications = bookingDocs.docs.map((doc) {
-                    return BookingModel.fromMap(doc.id, doc.data() as Map<String, dynamic>);
-                  }).toList();
+                  // FIXED: Inisialisasi list sebagai dynamic untuk menghindari Type Error
+                  List<dynamic> allNotifications = [];
 
-                  // Mengolah data Complaint
+                  // Ambil data Booking
+                  final bookingDocs = snapshot.data![0] as QuerySnapshot;
+                  allNotifications.addAll(bookingDocs.docs.map((doc) {
+                    return BookingModel.fromMap(doc.id, doc.data() as Map<String, dynamic>);
+                  }).toList());
+
+                  // Ambil data Complaint
                   final complaintDocs = snapshot.data![1] as QuerySnapshot;
                   allNotifications.addAll(complaintDocs.docs.map((doc) {
                     return ComplaintModel.fromMap(doc.id, doc.data() as Map<String, dynamic>);
                   }).toList());
 
-                  // Filter hanya yang butuh perhatian admin (Pending atau Refund)
+                  // Filter hanya status yang butuh perhatian admin (Pending atau Refund)
                   allNotifications = allNotifications.where((notif) {
                     if (notif is BookingModel) {
                       return notif.status == BookingStatus.pending || notif.status == BookingStatus.refundProcess;
@@ -112,14 +111,14 @@ class NotificationApprovalPage extends StatelessWidget {
 
                   // Urutkan berdasarkan waktu terbaru
                   allNotifications.sort((a, b) {
-                    DateTime timeA = (a is BookingModel) ? a.start : a.createdAt;
-                    DateTime timeB = (b is BookingModel) ? b.start : b.createdAt;
+                    DateTime timeA = (a is BookingModel) ? a.start : (a as ComplaintModel).createdAt;
+                    DateTime timeB = (b is BookingModel) ? b.start : (b as ComplaintModel).createdAt;
                     return timeB.compareTo(timeA);
                   });
 
                   if (allNotifications.isEmpty) {
                     return const Center(
-                      child: Text("Semua tugas selesai!", style: TextStyle(color: Colors.grey)),
+                      child: Text("Tidak ada pemesanan atau pengaduan terbaru.", style: TextStyle(color: Colors.grey)),
                     );
                   }
 
@@ -134,8 +133,8 @@ class NotificationApprovalPage extends StatelessWidget {
                         return _buildNotifItem(
                           title: isRefund ? "Permintaan Refund" : "Pengajuan Baru",
                           message: isRefund 
-                            ? "${item.userName} telah mengisi form refund untuk ${item.itemName}."
-                            : "${item.userName} mengajukan pemesanan ${item.itemName}.",
+                              ? "${item.userName} telah mengisi form refund untuk ${item.itemName}."
+                              : "${item.userName} mengajukan pemesanan ${item.itemName}.",
                           time: DateFormat('dd MMM, HH:mm').format(item.start),
                           type: isRefund ? "refund" : "request",
                           isUnread: true,
@@ -172,22 +171,26 @@ class NotificationApprovalPage extends StatelessWidget {
     Color iconColor;
     Color bgColor;
 
-    if (type == "request") {
-      icon = Icons.assignment_late_outlined;
-      iconColor = primaryTeal;
-      bgColor = primaryTeal.withOpacity(0.1);
-    } else if (type == "complaint") {
-      icon = Icons.report_problem_outlined;
-      iconColor = Colors.orange;
-      bgColor = Colors.orange.withOpacity(0.1);
-    } else if (type == "refund") {
-      icon = Icons.account_balance_wallet_outlined;
-      iconColor = Colors.blue;
-      bgColor = Colors.blue.withOpacity(0.1);
-    } else {
-      icon = Icons.cancel_outlined;
-      iconColor = Colors.red;
-      bgColor = Colors.red.withOpacity(0.1);
+    switch (type) {
+      case "request":
+        icon = Icons.assignment_late_outlined;
+        iconColor = primaryTeal;
+        bgColor = primaryTeal.withValues(alpha: 0.1);
+        break;
+      case "complaint":
+        icon = Icons.report_problem_outlined;
+        iconColor = Colors.orange;
+        bgColor = Colors.orange.withValues(alpha: 0.1);
+        break;
+      case "refund":
+        icon = Icons.account_balance_wallet_outlined;
+        iconColor = Colors.blue;
+        bgColor = Colors.blue.withValues(alpha: 0.1);
+        break;
+      default:
+        icon = Icons.notifications_none_outlined;
+        iconColor = Colors.grey;
+        bgColor = Colors.grey.withValues(alpha: 0.1);
     }
 
     return Container(
@@ -197,14 +200,12 @@ class NotificationApprovalPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
-        border: isUnread 
-            ? Border.all(color: iconColor.withOpacity(0.3), width: 1.5) 
-            : Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: isUnread ? iconColor.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1), width: 1.5),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.all(15),
@@ -217,13 +218,9 @@ class NotificationApprovalPage extends StatelessWidget {
           children: [
             Text(
               title,
-              style: TextStyle(
-                fontWeight: isUnread ? FontWeight.bold : FontWeight.w600,
-                fontSize: 14,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
-            if (isUnread)
-              CircleAvatar(radius: 4, backgroundColor: iconColor),
+            if (isUnread) CircleAvatar(radius: 4, backgroundColor: iconColor),
           ],
         ),
         subtitle: Column(

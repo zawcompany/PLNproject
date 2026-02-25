@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart'; // Wajib tambah intl di pubspec.yaml
 import 'package:monitoring_app/widgets/navbar.dart';
+import '../../models/booking_model.dart'; // Sesuaikan path model Anda
 
 class RiwayatPage extends StatefulWidget {
   const RiwayatPage({super.key});
@@ -23,9 +27,9 @@ class _RiwayatPageState extends State<RiwayatPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: Colors.white, 
-              surfaceTintColor: Colors.white, 
-              elevation: 0, 
+              backgroundColor: Colors.white,
+              surfaceTintColor: Colors.white,
+              elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               title: Text(
@@ -39,7 +43,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // KATEGORI WISMA
                       _buildFilterLabel("Pilih Jenis Wisma"),
                       _buildFilterChips(
                         options: ["Semua", "Anggrek", "Cempaka", "Bougenville", "Dahlia", "Edelweiss", "Flamboyan", "Gladiol", "Hortensia", "Toddopuli"],
@@ -48,9 +51,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                           setDialogState(() => _handleMultiSelect(selectedWisma, val));
                         },
                       ),
-                      const SizedBox(height: 24), // Jarak antar kategori lebih lebar
-
-                      // KATEGORI KELAS
+                      const SizedBox(height: 24),
                       _buildFilterLabel("Pilih Jenis Kelas"),
                       _buildFilterChips(
                         options: ["Semua", "Kelas A", "Kelas B", "Kelas C", "Aula", "Lab B", "Kelas Toddopuli"],
@@ -60,11 +61,9 @@ class _RiwayatPageState extends State<RiwayatPage> {
                         },
                       ),
                       const SizedBox(height: 24),
-
-                      // KATEGORI STATUS
                       _buildFilterLabel("Status Pesanan"),
                       _buildFilterChips(
-                        options: ["Semua", "Menunggu Konfirmasi", "Disetujui", "Ditolak"],
+                        options: ["Semua", "Pending", "Approved", "Rejected"],
                         selectedList: selectedStatus,
                         onSelected: (val) {
                           setDialogState(() => _handleMultiSelect(selectedStatus, val));
@@ -87,7 +86,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                   ),
                   onPressed: () {
-                    setState(() {}); 
+                    setState(() {});
                     Navigator.pop(context);
                   },
                   child: const Text("Terapkan Filter", style: TextStyle(color: Colors.white)),
@@ -100,7 +99,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
     );
   }
 
-  // Logika untuk menangani pilihan ganda
   void _handleMultiSelect(List<String> list, String value) {
     if (value == "Semua") {
       list.clear();
@@ -133,7 +131,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
   }) {
     return Wrap(
       spacing: 8,
-      runSpacing: 8, // Jarak antar baris chip lebih rapi
+      runSpacing: 8,
       children: options.map((option) {
         final bool isSelected = selectedList.contains(option);
         return FilterChip(
@@ -224,114 +222,143 @@ class _RiwayatPageState extends State<RiwayatPage> {
   }
 
   Widget _buildHistoryList() {
-    final List<Map<String, dynamic>> riwayatItems = [
-      {
-        "title": "Wisma Hortensia",
-        "detail": "Kamar VIP Hortensia 01",
-        "date": "12 Feb 2026",
-        "bookDate": "25 Feb - 27 Feb 2026",
-        "status": "Dikonfirmasi",
-        "isSelesai": true
-      },
-      {
-        "title": "Wisma Toddopuli",
-        "detail": "Kamar Toddopuli 10",
-        "date": "10 Feb 2026",
-        "bookDate": "01 Mar - 05 Mar 2026",
-        "status": "Menunggu",
-        "isSelesai": false
-      },
-      {
-        "title": "Wisma Anggrek",
-        "detail": "Kamar Anggrek 05",
-        "date": "05 Feb 2026",
-        "bookDate": "15 Feb - 16 Feb 2026",
-        "status": "Dikonfirmasi",
-        "isSelesai": true
-      },
-    ];
+    final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      itemCount: riwayatItems.length,
-      itemBuilder: (context, index) {
-        final item = riwayatItems[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 15),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: const Color(0xFFF0F4F4)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    item['title'],
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  ),
-                  Text(
-                    item['date'],
-                    style: const TextStyle(color: Colors.grey, fontSize: 10),
+    return StreamBuilder<QuerySnapshot>(
+      // Mengambil pesanan milik user yang sedang login saja
+      stream: FirebaseFirestore.instance
+          .collection('bookings')
+          .where('userId', isEqualTo: currentUserId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text("Belum ada riwayat pesanan."));
+        }
+
+        // Mapping data dari Firebase & Filter Local
+        var bookings = snapshot.data!.docs.map((doc) {
+          return BookingModel.fromMap(doc.id, doc.data() as Map<String, dynamic>);
+        }).toList();
+
+        // LOGIKA FILTER
+        if (!selectedWisma.contains("Semua")) {
+          bookings = bookings.where((b) => selectedWisma.any((w) => b.itemName.contains(w))).toList();
+        }
+        if (!selectedKelas.contains("Semua")) {
+          bookings = bookings.where((b) => selectedKelas.any((k) => b.itemName.contains(k))).toList();
+        }
+        if (!selectedStatus.contains("Semua")) {
+          bookings = bookings.where((b) => selectedStatus.contains(b.status.name)).toList();
+        }
+
+        // Urutkan berdasarkan yang terbaru
+        bookings.sort((a, b) => b.start.compareTo(a.start));
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          itemCount: bookings.length,
+          itemBuilder: (context, index) {
+            final booking = bookings[index];
+
+            // Konfigurasi Status UI
+            String statusLabel = "Menunggu";
+            Color statusColor = Colors.orange;
+            Color bgColor = const Color(0xFFFFF3E0);
+            bool isSelesai = false;
+
+            if (booking.status == BookingStatus.approved) {
+              statusLabel = "Disetujui";
+              statusColor = primaryColor;
+              bgColor = const Color(0xFFE0F2F3);
+              isSelesai = true;
+            } else if (booking.status == BookingStatus.rejected) {
+              statusLabel = "Ditolak";
+              statusColor = Colors.red;
+              bgColor = const Color(0xFFFFEBEE);
+            }
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 15),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: const Color(0xFFF0F4F4)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                item['detail'],
-                style: TextStyle(
-                  color: primaryColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Divider(height: 1, color: Color(0xFFF0F4F4)),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(Icons.calendar_today_outlined, size: 14, color: primaryColor),
-                      const SizedBox(width: 6),
                       Text(
-                        item['bookDate'],
-                        style: const TextStyle(fontSize: 11, color: Colors.black87),
+                        booking.itemName,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                      Text(
+                        DateFormat('dd MMM yyyy').format(booking.start),
+                        style: const TextStyle(color: Colors.grey, fontSize: 10),
                       ),
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: item['isSelesai'] ? const Color(0xFFE0F2F3) : const Color(0xFFFFF3E0),
-                      borderRadius: BorderRadius.circular(8),
+                  const SizedBox(height: 4),
+                  Text(
+                    "ID Pesanan: ${booking.id.substring(0, 8).toUpperCase()}",
+                    style: TextStyle(
+                      color: primaryColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
                     ),
-                    child: Text(
-                      item['status'],
-                      style: TextStyle(
-                        color: item['isSelesai'] ? primaryColor : Colors.orange,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Divider(height: 1, color: Color(0xFFF0F4F4)),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.calendar_today_outlined, size: 14, color: primaryColor),
+                          const SizedBox(width: 6),
+                          Text(
+                            "${DateFormat('dd MMM').format(booking.start)} - ${DateFormat('dd MMM yyyy').format(booking.end)}",
+                            style: const TextStyle(fontSize: 11, color: Colors.black87),
+                          ),
+                        ],
                       ),
-                    ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: bgColor,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          statusLabel,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

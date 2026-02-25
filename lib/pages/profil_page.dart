@@ -7,7 +7,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart'; 
 import '../widgets/navbar.dart';
 
-
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -35,9 +34,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final doc = await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
-            .get();
+            .get(const GetOptions(source: Source.server));
 
-        if (doc.exists) {
+        if (doc.exists && mounted) {
           final data = doc.data();
           setState(() {
             name = data?['name'] ?? name;
@@ -48,14 +47,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       } catch (e) {
         debugPrint("Error loading user data: $e");
       } finally {
-        setState(() => isLoading = false);
+        if (mounted) setState(() => isLoading = false);
       }
     }
   }
 
-  // Tuttorial Video
   Future<void> _launchTutorial() async {
-    final Uri url = Uri.parse('https://www.youtube.com/watch?v=your_video_id'); // Ganti dengan link Anda
+    final Uri url = Uri.parse('https://www.youtube.com/watch?v=your_video_id'); 
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch $url');
     }
@@ -82,34 +80,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: Colors.white,
-    body: isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildHeader(),     // Sekarang berisi Background + Foto
-                _buildUserInfo(),   // Berisi Nama + Email dengan padding atas
-                const SizedBox(height: 30),
-                _buildMenuButtons(),
-              ],
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildHeader(),
+                  _buildUserInfo(),
+                  const SizedBox(height: 30),
+                  _buildMenuButtons(),
+                ],
+              ),
             ),
-          ),
-    bottomNavigationBar: CustomBottomNav(
-      currentIndex: 2,
-      onTap: _handleNavigation,
-    ),
-  );
-}
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: 2,
+        onTap: _handleNavigation,
+      ),
+    );
+  }
 
   Widget _buildHeader() {
     return Stack(
       alignment: Alignment.center,
       clipBehavior: Clip.none, 
       children: [
-        // Gambar Background Header
         SizedBox(
           width: double.infinity,
           height: 120, 
@@ -118,7 +115,6 @@ Widget build(BuildContext context) {
             fit: BoxFit.cover,
           ),
         ),
-        // Foto profil
         Positioned(
           bottom: -120, 
           child: Container(
@@ -127,16 +123,17 @@ Widget build(BuildContext context) {
               border: Border.all(color: Colors.white, width: 4),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  // Perbaikan withOpacity ke withValues
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
               ],
             ),
-            child: CircleAvatar(
+            child: const CircleAvatar(
               radius: 50, 
-              backgroundColor: const Color(0xFFE0E6E6),
-              child: const Icon(Icons.person, size: 65, color: Colors.white), // Ikon juga diperbesar
+              backgroundColor: Color(0xFFE0E6E6),
+              child: Icon(Icons.person, size: 65, color: Colors.white),
             ),
           ),
         ),
@@ -166,17 +163,16 @@ Widget build(BuildContext context) {
     return Column(
       children: [
         _menuItem(Icons.edit_outlined, "Edit Profil", onTap: () async {
-          final result = await showDialog(
+          final result = await showDialog<bool>(
             context: context,
             builder: (context) => const DialogEditProfil(),
           );
 
-          if (result == true) {
+          if (result == true && mounted) {
             _loadUserData(); 
           }
         }),
         _menuItem(Icons.play_circle_outline, "Tutorial Penggunaan Aplikasi", onTap: _launchTutorial),
-        
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Divider(color: Color(0xFFF0F4F4)),
@@ -226,8 +222,6 @@ Widget build(BuildContext context) {
   }
 }
 
-// --- BAGIAN DIALOG EDIT PROFIL ---
-
 class DialogEditProfil extends StatefulWidget {
   const DialogEditProfil({super.key});
 
@@ -237,6 +231,7 @@ class DialogEditProfil extends StatefulWidget {
 
 class _DialogEditProfilState extends State<DialogEditProfil> {
   final _formKey = GlobalKey<FormState>();
+  
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   final TextEditingController _oldPwController = TextEditingController();
@@ -245,13 +240,41 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
   File? _image;
   bool _isObscureNew = true;
   bool _isObscureOld = true;
+  bool _isFetching = true;
 
   @override
   void initState() {
     super.initState();
+    _nameController = TextEditingController();
+    _emailController = TextEditingController();
+    _loadCurrentData();
+  }
+
+  Future<void> _loadCurrentData() async {
     final user = FirebaseAuth.instance.currentUser;
-    _nameController = TextEditingController(text: user?.displayName ?? "");
-    _emailController = TextEditingController(text: user?.email ?? "");
+    if (user != null) {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      
+      if (doc.exists && mounted) {
+        setState(() {
+          _nameController.text = doc.data()?['name'] ?? "";
+          _emailController.text = doc.data()?['email'] ?? "";
+          _isFetching = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _oldPwController.dispose();
+    _newPwController.dispose();
+    super.dispose();
   }
 
   Future<void> _getImage() async {
@@ -264,10 +287,10 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16), // Box lebih lebar
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16),
       backgroundColor: Colors.white,
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // Lengkungan tidak tajam
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         width: MediaQuery.of(context).size.width,
         padding: const EdgeInsets.all(24),
@@ -278,14 +301,10 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header Dialog
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      "Edit Profil", 
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)
-                    ),
+                    const Text("Edit Profil", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
                     IconButton(
                       onPressed: () => Navigator.pop(context), 
                       icon: const Icon(Icons.close, color: Colors.grey, size: 20)
@@ -295,30 +314,20 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
                 const SizedBox(height: 10),
                 const Divider(color: Color(0xFFF0F4F4)),
                 const SizedBox(height: 20),
-
-                // Avatar Section
                 Center(child: _buildAvatarPicker()),
                 const SizedBox(height: 30),
-
-                // Form Fields
                 _fieldLabel("Nama Lengkap"),
-                _buildTextField(_nameController, "Contoh: Zahra Amaliah", Icons.person_outline),
-                
+                _buildTextField(_nameController, "Contoh: user", Icons.person_outline),
                 const SizedBox(height: 20),
                 _fieldLabel("Email"),
                 _buildTextField(_emailController, "user@mail.com", Icons.email_outlined),
-
                 const SizedBox(height: 20),
                 _fieldLabel("Password Baru (Opsional)"),
                 _buildTextField(_newPwController, "••••••••", Icons.lock_open_outlined, isPassword: true, isNew: true),
-
                 const SizedBox(height: 20),
                 _fieldLabel("Konfirmasi Password Lama"),
                 _buildTextField(_oldPwController, "Wajib diisi untuk simpan", Icons.lock_outline, isPassword: true, isNew: false),
-
                 const SizedBox(height: 32),
-
-                // Button Section
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -329,15 +338,67 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        // Logika simpan Anda tetap sama
-                        Navigator.pop(context, true);
+                      if (!_formKey.currentState!.validate()) return;
+
+                      // Simpan navigator sebelum async gap
+                      final navigator = Navigator.of(context);
+                      final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+                      try {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => const Center(child: CircularProgressIndicator()),
+                        );
+
+                        final user = FirebaseAuth.instance.currentUser;
+                        final cred = EmailAuthProvider.credential(
+                          email: user!.email!,
+                          password: _oldPwController.text.trim(),
+                        );
+
+                        await user.reauthenticateWithCredential(cred);
+
+                        if (_emailController.text.trim() != user.email) {
+                          await user.verifyBeforeUpdateEmail(_emailController.text.trim());
+                        }
+
+                        if (_newPwController.text.trim().isNotEmpty) {
+                          await user.updatePassword(_newPwController.text.trim());
+                        }
+
+                        await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(user.uid)
+                            .update({
+                          'name': _nameController.text.trim(),
+                          'email': _emailController.text.trim(),
+                        });
+
+                        if (!mounted) return;
+                        
+                        // Gunakan instance navigator yang sudah disimpan
+                        navigator.pop(); // Tutup Loading
+                        navigator.pop(true); // Tutup Dialog & kirim true
+                        
+                        scaffoldMessenger.showSnackBar(
+                          const SnackBar(content: Text("Profil berhasil diperbarui")),
+                        );
+                      } catch (e) {
+                        if (!mounted) return;
+                        navigator.pop(); // Tutup Loading
+                        
+                        String errorMsg = e.toString();
+                        if (errorMsg.contains("wrong-password")) {
+                          errorMsg = "Password lama salah";
+                        }
+
+                        scaffoldMessenger.showSnackBar(
+                          SnackBar(content: Text("Gagal: $errorMsg"), backgroundColor: Colors.red),
+                        );
                       }
                     },
-                    child: const Text(
-                      "Simpan Perubahan", 
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
-                    ),
+                    child: const Text("Simpan Perubahan", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -351,10 +412,7 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
   Widget _fieldLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        label, 
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87)
-      ),
+      child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87)),
     );
   }
 
@@ -411,34 +469,22 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Color(0xFF008996)),
         ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.redAccent),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.redAccent),
-        ),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
                   (isNew ? _isObscureNew : _isObscureOld) ? Icons.visibility_off : Icons.visibility,
-                  size: 18,
-                  color: Colors.grey,
+                  size: 18, color: Colors.grey,
                 ),
                 onPressed: () => setState(() {
-                  if (isNew) {
-                    _isObscureNew = !_isObscureNew;
-                  } else {
-                    _isObscureOld = !_isObscureOld;
-                  }
+                  if (isNew) _isObscureNew = !_isObscureNew;
+                  else _isObscureOld = !_isObscureOld;
                 }),
               )
             : null,
       ),
       validator: (val) {
-        if (!isPassword || !isNew) { // Validasi nama, email, dan password lama
-          if (val == null || val.isEmpty) return "Bagian ini wajib diisi";
+        if (!isPassword || !isNew) { 
+          if (val == null || val.trim().isEmpty) return "Bagian ini wajib diisi";
         }
         return null;
       },
