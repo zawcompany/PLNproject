@@ -56,39 +56,37 @@ class _FormWismaGeneralInternalState extends State<FormWismaGeneralInternal> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw "User tidak terautentikasi";
 
-      // 1. Buat Objek Booking
-      final newBooking = BookingModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        userId: user.uid,
-        userName: namaController.text.trim(),
-        roomIds: selectedRooms.map((r) => r.id).toList(), 
-        itemName: "Pemesanan General Internal (${selectedRooms.length} Kamar)",
-        start: selectedDate!.start,
-        end: selectedDate!.end,
-        totalPayment: 0, // Internal biasanya gratis atau diurus kantor
-        status: BookingStatus.pending,
-        paymentProof: suratTugas!.path, // Surat tugas sebagai bukti
-      );
-
-      // 2. Loop update status kamar di Wisma masing-masing menjadi TERISI
       final snapshot = await FirebaseFirestore.instance.collection('items').get();
       final allItems = snapshot.docs.map((doc) => ItemModel.fromMap(doc.id, doc.data())).toList();
 
       for (var room in selectedRooms) {
+        final newBooking = BookingModel(
+          id: "${DateTime.now().millisecondsSinceEpoch}_${room.id}", 
+          userId: user.uid,
+          userName: namaController.text.trim(),
+          roomIds: [room.id], 
+          itemName: room.name, 
+          start: selectedDate!.start,
+          end: selectedDate!.end,
+          totalPayment: 0,
+          status: BookingStatus.pending,
+          paymentProof: suratTugas!.path,
+          nik: nikController.text.trim(),
+          nip: nipController.text.trim(),
+          userType: 'internal',
+        );
+
         final parentWisma = allItems.firstWhere((item) => item.rooms.any((r) => r.id == room.id));
         await _db.updateRoomCondition(parentWisma.id, room.name, RoomCondition.terisi);
-      }
 
-      // 3. Simpan dokumen booking utama
-      await FirebaseFirestore.instance.collection('bookings').doc(newBooking.id).set(newBooking.toMap());
+        await FirebaseFirestore.instance.collection('bookings').doc(newBooking.id).set(newBooking.toMap());
+      }
 
       if (!mounted) return;
       _showSuccessDialog();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

@@ -13,6 +13,14 @@ class BookingModel {
   BookingStatus status;
   final String? accountNumber;
   final String? rejectReason;
+  final String? nik;
+  final String? nip;
+  final String? address;
+  final String? npwp;
+  final int? maleCount;
+  final int? femaleCount;
+  final int? guestCount;
+  final String? userType;
 
   BookingModel({
     required this.id,
@@ -27,6 +35,14 @@ class BookingModel {
     this.status = BookingStatus.pending,
     this.accountNumber,
     this.rejectReason,
+    this.nik,
+    this.nip,
+    this.address,
+    this.npwp,
+    this.maleCount,
+    this.femaleCount,
+    this.guestCount,
+    this.userType,
   });
 
   Map<String, dynamic> toMap() {
@@ -43,6 +59,14 @@ class BookingModel {
       'status': status.name,
       'accountNumber': accountNumber,
       'rejectReason': rejectReason,
+      'nik': nik,
+      'nip': nip,
+      'address': address,
+      'npwp': npwp,
+      'male_count': maleCount,
+      'female_count': femaleCount,
+      'guest_count': guestCount,
+      'user_type': userType,
     };
   }
 
@@ -63,6 +87,14 @@ class BookingModel {
       ),
       accountNumber: map['accountNumber'],
       rejectReason: map['rejectReason'],
+      nik: map['nik'],
+      nip: map['nip'],
+      address: map['address'],
+      npwp: map['npwp'],
+      maleCount: map['male_count'],
+      femaleCount: map['female_count'],
+      guestCount: map['guest_count'],
+      userType: map['user_type'],
     );
   }
 }

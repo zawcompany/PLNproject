@@ -22,7 +22,7 @@ class _FormKelasGeneralState extends State<FormKelasGeneral> {
   final DatabaseService _db = DatabaseService(); // Inisialisasi Service
   
   static const Color primaryTeal = Color(0xFF008996);
-  static const Color softTeal = Color(0xFFE8F1F3);
+  // static const Color softTeal = Color(0xFFE8F1F3);
   static const Color softred = Color(0xffffd6d6);
 
   final namaController = TextEditingController();
@@ -61,39 +61,42 @@ class _FormKelasGeneralState extends State<FormKelasGeneral> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw "User tidak ditemukan";
 
-      // 1. Siapkan Objek Booking
-      final newBooking = BookingModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        userId: user.uid,
-        userName: namaController.text.trim(),
-        roomIds: selectedRooms.map((r) => r.id).toList(), 
-        itemName: "Peminjaman Kelas General (${selectedRooms.length} Ruangan)",
-        start: selectedDate!.start,
-        end: selectedDate!.end,
-        totalPayment: 0, // Kelas biasanya tidak berbayar
-        status: BookingStatus.pending,
-        paymentProof: suratTugas!.path, // Surat tugas sebagai bukti
-      );
-
-      // 2. Update status semua kamar yang dipilih menjadi TERISI di Firestore
       final snapshot = await FirebaseFirestore.instance.collection('items').get();
       final allItems = snapshot.docs.map((doc) => ItemModel.fromMap(doc.id, doc.data())).toList();
 
+      // LOOPING UNTUK MEMBUAT DOKUMEN BOOKING TERPISAH PER KAMAR
       for (var room in selectedRooms) {
+        final newBooking = BookingModel(
+          // Tambahkan suffix ID kamar agar ID booking di Firestore unik
+          id: "${DateTime.now().millisecondsSinceEpoch}_${room.id}", 
+          userId: user.uid,
+          userName: namaController.text.trim(),
+          roomIds: [room.id], // Hanya simpan 1 ID kamar
+          itemName: room.name, // Nama item langsung nama kamarnya (A1, A2, dsb)
+          start: selectedDate!.start,
+          end: selectedDate!.end,
+          totalPayment: 0,
+          status: BookingStatus.pending,
+          paymentProof: suratTugas!.path,
+          nik: nikController.text.trim(),
+          nip: nipController.text.trim(),
+          guestCount: (int.tryParse(lakiController.text) ?? 0) + (int.tryParse(perempuanController.text) ?? 0),
+          userType: 'internal',
+        );
+
+        // Update status kamar spesifik ini di koleksi items
         final parentItem = allItems.firstWhere((item) => item.rooms.any((r) => r.id == room.id));
         await _db.updateRoomCondition(parentItem.id, room.name, RoomCondition.terisi);
-      }
 
-      // 3. Simpan dokumen booking utama
-      await FirebaseFirestore.instance.collection('bookings').doc(newBooking.id).set(newBooking.toMap());
+        // Simpan dokumen booking individual ke koleksi bookings
+        await FirebaseFirestore.instance.collection('bookings').doc(newBooking.id).set(newBooking.toMap());
+      }
 
       if (!mounted) return;
       _showSuccessDialog();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal memproses: $e"), backgroundColor: Colors.red),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal: $e"), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

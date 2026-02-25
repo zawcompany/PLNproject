@@ -78,40 +78,45 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw "User tidak ditemukan";
 
-      // 1. Siapkan Objek Booking
-      final newBooking = BookingModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        userId: user.uid,
-        userName: namaController.text.trim(),
-        roomIds: selectedRooms.map((r) => r.id).toList(), 
-        itemName: "Pemesanan General (${selectedRooms.length} Kamar)",
-        start: selectedDate!.start,
-        end: selectedDate!.end,
-        totalPayment: totalHarga.toDouble(),
-        status: BookingStatus.pending,
-        paymentProof: buktiPembayaran!.path,
-      );
-
-      // 2. Loop update status kamar di Wisma masing-masing menjadi TERISI
-      // Kita butuh data items terbaru untuk mencocokkan room dengan parent item-nya
       final snapshot = await FirebaseFirestore.instance.collection('items').get();
       final allItems = snapshot.docs.map((doc) => ItemModel.fromMap(doc.id, doc.data())).toList();
 
       for (var room in selectedRooms) {
+        // Hitung harga per kamar
+        final totalDays = selectedDate!.end.difference(selectedDate!.start).inDays + 1;
+        int hargaHarian = room.name.toLowerCase().contains("hortensia") ? 500000 : 250000;
+        double paymentPerRoom = (hargaHarian * totalDays).toDouble();
+
+        final newBooking = BookingModel(
+          id: "${DateTime.now().millisecondsSinceEpoch}_${room.id}", 
+          userId: user.uid,
+          userName: namaController.text.trim(),
+          roomIds: [room.id], 
+          itemName: room.name, 
+          start: selectedDate!.start,
+          end: selectedDate!.end,
+          totalPayment: paymentPerRoom,
+          status: BookingStatus.pending,
+          paymentProof: buktiPembayaran!.path,
+          nik: nikController.text.trim(),
+          address: alamatController.text.trim(),
+          npwp: npwpController.text.trim(),
+          maleCount: int.tryParse(lakiController.text) ?? 0,
+          femaleCount: int.tryParse(perempuanController.text) ?? 0,
+          userType: 'eksternal',
+        );
+
         final parentWisma = allItems.firstWhere((item) => item.rooms.any((r) => r.id == room.id));
         await _db.updateRoomCondition(parentWisma.id, room.name, RoomCondition.terisi);
-      }
 
-      // 3. Simpan dokumen booking utama
-      await FirebaseFirestore.instance.collection('bookings').doc(newBooking.id).set(newBooking.toMap());
+        await FirebaseFirestore.instance.collection('bookings').doc(newBooking.id).set(newBooking.toMap());
+      }
 
       if (!mounted) return;
       _showSuccessDialog();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal memproses pesanan: $e"), backgroundColor: Colors.red),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal: $e"), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

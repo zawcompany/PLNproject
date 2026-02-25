@@ -3,9 +3,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../models/booking_model.dart';
 import '../../models/complaint_model.dart';
+import '../../models/room_model.dart';
 import '../../services/database_service.dart';
 import '../../widgets/navbar.dart';
 
@@ -23,6 +23,9 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
   List<String> selectedKelas = ["Semua"];
   List<String> selectedStatus = ["Semua"];
   String selectedRiwayatType = "Pemesanan";
+
+  bool isSelectionMode = false;
+  List<String> selectedItemIds = [];
 
   void _showFilterDialog() {
     showDialog(
@@ -83,6 +86,38 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
     );
   }
 
+  Future<void> _deleteSelectedItems() async {
+    bool confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Konfirmasi Hapus"),
+        content: Text("Hapus ${selectedItemIds.length} data riwayat terpilih?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Batal")),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Hapus", style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    ) ?? false;
+
+    if (confirm) {
+      WriteBatch batch = FirebaseFirestore.instance.batch();
+      String collection = selectedRiwayatType == "Pemesanan" ? 'bookings' : 'complaints';
+      
+      for (String id in selectedItemIds) {
+        batch.delete(FirebaseFirestore.instance.collection(collection).doc(id));
+      }
+      
+      await batch.commit();
+      setState(() {
+        isSelectionMode = false;
+        selectedItemIds.clear();
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Berhasil menghapus riwayat")));
+      }
+    }
+  }
+
   Widget _buildFilterLabel(String label) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
     child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
@@ -102,12 +137,8 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
           onSelected: (v) {
             setDialogState(() {
               if (opt == "Semua") {
-                if (isSel) {
-                  selectedList.clear();
-                } else {
-                  selectedList.clear();
-                  selectedList.add("Semua");
-                }
+                selectedList.clear();
+                selectedList.add("Semua");
               } else {
                 selectedList.remove("Semua");
                 if (v) {
@@ -124,6 +155,23 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
     );
   }
 
+  int getStatusPriority(dynamic item) {
+    String status;
+    if (item is BookingModel) {
+      status = item.status.name;
+    } else {
+      status = (item as ComplaintModel).status.name;
+    }
+    switch (status) {
+      case 'pending': return 1;
+      case 'repairing': return 2;
+      case 'approved':
+      case 'resolved': return 3;
+      case 'rejected': return 4;
+      default: return 5;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -136,6 +184,14 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
           Expanded(child: _buildHistoryList()),
         ],
       ),
+      floatingActionButton: isSelectionMode && selectedItemIds.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: _deleteSelectedItems,
+              backgroundColor: Colors.red,
+              icon: const Icon(Icons.delete, color: Colors.white),
+              label: Text("Hapus (${selectedItemIds.length})", style: const TextStyle(color: Colors.white)),
+            )
+          : null,
       bottomNavigationBar: CustomBottomNav(
         currentIndex: 1,
         onTap: (index) {
@@ -185,8 +241,6 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
             matchesKelas = selectedKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
           }
 
-          bool categoryMatch = matchesWisma || matchesKelas;
-
           bool statusMatch = false;
           if (selectedStatus.contains("Semua") || selectedStatus.isEmpty) {
             statusMatch = true;
@@ -201,10 +255,13 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
               if (selectedStatus.contains("Selesai") && status == 'resolved') statusMatch = true;
             }
           }
-          return categoryMatch && statusMatch;
+          return (matchesWisma || matchesKelas) && statusMatch;
         }).toList();
 
         allItems.sort((a, b) {
+          int priorityA = getStatusPriority(a);
+          int priorityB = getStatusPriority(b);
+          if (priorityA != priorityB) return priorityA.compareTo(priorityB);
           DateTime timeA = (a is BookingModel) ? a.start : (a as ComplaintModel).createdAt;
           DateTime timeB = (b is BookingModel) ? b.start : (b as ComplaintModel).createdAt;
           return timeB.compareTo(timeA);
@@ -217,8 +274,49 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
           itemCount: allItems.length,
           itemBuilder: (context, index) {
             final item = allItems[index];
-            if (item is BookingModel) return _buildBookingCard(item);
-            return _buildComplaintCard(item as ComplaintModel);
+            bool isSelected = selectedItemIds.contains(item.id);
+            bool canBeDeleted = false;
+            if (item is BookingModel) {
+              canBeDeleted = item.status == BookingStatus.approved || item.status == BookingStatus.rejected;
+            } else if (item is ComplaintModel) {
+              canBeDeleted = item.status == ComplaintStatus.resolved;
+            }
+
+            return GestureDetector(
+              onTap: isSelectionMode ? () {
+                if (canBeDeleted) {
+                  setState(() {
+                    if (isSelected) {
+                      selectedItemIds.remove(item.id);
+                    } else {
+                      selectedItemIds.add(item.id);
+                    }
+                  });
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Data yang sedang diproses tidak dapat dihapus"), duration: Duration(seconds: 1)));
+                }
+              } : null,
+              child: Opacity(
+                opacity: isSelectionMode && !canBeDeleted ? 0.5 : 1.0,
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 15),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: isSelected ? Colors.red : const Color(0xFFF0F4F4), width: isSelected ? 2 : 1),
+                  ),
+                  child: Row(
+                    children: [
+                      if (isSelectionMode) ...[
+                        const SizedBox(width: 16),
+                        Icon(!canBeDeleted ? Icons.lock_outline : (isSelected ? Icons.check_box : Icons.check_box_outline_blank), color: isSelected ? Colors.red : Colors.grey),
+                      ],
+                      Expanded(child: item is BookingModel ? _buildBookingCard(item) : _buildComplaintCard(item as ComplaintModel)),
+                    ],
+                  ),
+                ),
+              ),
+            );
           },
         );
       },
@@ -226,37 +324,26 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
   }
 
   Widget _buildBookingCard(BookingModel booking) {
-    String cleanWismaName = booking.itemName.replaceAll(RegExp(r'Wisma', caseSensitive: false), '').trim();
-    String roomDisplay = booking.roomIds.isNotEmpty 
-        ? booking.roomIds.first.replaceAll('_', ' ').toUpperCase() 
-        : cleanWismaName.toUpperCase();
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
+    return Padding(
       padding: const EdgeInsets.all(16),
-      decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(roomDisplay, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              Text(booking.itemName.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               Text(DateFormat('dd MMM yyyy').format(booking.start), style: const TextStyle(color: Colors.grey, fontSize: 10)),
             ],
           ),
           const SizedBox(height: 4),
-          Text("Wisma: $cleanWismaName", style: const TextStyle(color: Colors.grey, fontSize: 12)),
           Text("Oleh: ${booking.userName}", style: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold)),
           const Divider(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildStatusBadge(booking.status.name, isBooking: true),
-              IconButton(
-                onPressed: () => _showTinjauPemesanan(booking),
-                icon: Icon(Icons.arrow_forward_ios_rounded, color: primaryColor, size: 14),
-              )
+              if (!isSelectionMode) IconButton(onPressed: () => _showTinjauPemesanan(booking), icon: Icon(Icons.arrow_forward_ios_rounded, color: primaryColor, size: 14)),
             ],
           )
         ],
@@ -265,17 +352,15 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
   }
 
   Widget _buildComplaintCard(ComplaintModel complaint) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
+    return Padding(
       padding: const EdgeInsets.all(16),
-      decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(complaint.roomName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              Text(complaint.roomName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               Text(DateFormat('dd MMM yyyy').format(complaint.createdAt), style: const TextStyle(color: Colors.grey, fontSize: 10)),
             ],
           ),
@@ -286,10 +371,7 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildStatusBadge(complaint.status.name, isBooking: false),
-              IconButton(
-                onPressed: () => _showTinjauPengaduan(complaint),
-                icon: Icon(Icons.arrow_forward_ios_rounded, color: primaryColor, size: 14),
-              )
+              if (!isSelectionMode) IconButton(onPressed: () => _showTinjauPengaduan(complaint), icon: Icon(Icons.arrow_forward_ios_rounded, color: primaryColor, size: 14)),
             ],
           )
         ],
@@ -297,20 +379,12 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
     );
   }
 
-  BoxDecoration _cardDecoration() => BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(15),
-    border: Border.all(color: const Color(0xFFF0F4F4)),
-    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
-  );
-
   Widget _buildStatusBadge(String status, {required bool isBooking}) {
     String label = "";
     Color color = Colors.orange;
-
     if (isBooking) {
       switch (status) {
-        case 'pending': label = "MENUNGGU PERSETUJUAN"; color = Colors.orange; break;
+        case 'pending': label = "MENUNGGU"; color = Colors.orange; break;
         case 'approved': label = "DITERIMA"; color = primaryColor; break;
         case 'rejected': label = "DITOLAK"; color = Colors.red; break;
         default: label = status.toUpperCase();
@@ -323,7 +397,6 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
         default: label = status.toUpperCase();
       }
     }
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
@@ -348,10 +421,7 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
       children: [
         PopupMenuButton<String>(
           onSelected: (v) {
-            setState(() {
-              selectedRiwayatType = v;
-              selectedStatus = ["Semua"]; 
-            });
+            setState(() { selectedRiwayatType = v; selectedStatus = ["Semua"]; isSelectionMode = false; selectedItemIds.clear(); });
           },
           itemBuilder: (c) => [
             const PopupMenuItem(value: "Pemesanan", child: Text("Pemesanan")),
@@ -359,16 +429,37 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
           ],
           child: Row(children: [Text("Riwayat $selectedRiwayatType", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor)), const Icon(Icons.keyboard_arrow_down_rounded)]),
         ),
-        IconButton(onPressed: _showFilterDialog, icon: Icon(Icons.filter_list_rounded, color: primaryColor)),
+        Row(
+          children: [
+            GestureDetector(
+              onTap: () => setState(() { isSelectionMode = !isSelectionMode; selectedItemIds.clear(); }),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: isSelectionMode ? Colors.red.withValues(alpha: 0.1) : primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                child: Icon(isSelectionMode ? Icons.close : Icons.delete_outline, color: isSelectionMode ? Colors.red : primaryColor, size: 20),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(onPressed: _showFilterDialog, icon: Icon(Icons.filter_list_rounded, color: primaryColor)),
+          ],
+        ),
       ],
     ),
   );
 }
 
 // --- DIALOG TINJAU PEMESANAN ---
-class DialogTinjauPemesanan extends StatelessWidget {
+class DialogTinjauPemesanan extends StatefulWidget {
   final BookingModel booking;
   const DialogTinjauPemesanan({super.key, required this.booking});
+
+  @override
+  State<DialogTinjauPemesanan> createState() => _DialogTinjauPemesananState();
+}
+
+class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
+  final DatabaseService db = DatabaseService();
+  bool _isProcessing = false;
 
   Widget _rowInfo(String l, String v) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 4), 
@@ -386,29 +477,76 @@ class DialogTinjauPemesanan extends StatelessWidget {
     child: Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF008996))),
   );
 
-  Future<void> _launchURL(String urlString) async {
-    final Uri url = Uri.parse(urlString);
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      throw Exception('Could not launch $url');
-    }
+  void _showRejectDialog() {
+    final TextEditingController reasonController = TextEditingController();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setPopUpState) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text("Konfirmasi", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Berikan alasan penolakan (opsional):", style: TextStyle(fontSize: 13)),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: reasonController,
+                  maxLines: 3,
+                  decoration: InputDecoration(hintText: "Tulis alasan di sini...", border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: _isProcessing ? null : () => Navigator.pop(context), child: const Text("Batal")),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: _isProcessing ? null : () async {
+                  setPopUpState(() => _isProcessing = true);
+                  try {
+                    await db.rejectBooking(widget.booking.id, "rejected", reasonController.text.trim(), widget.booking.roomIds);
+                    final snapshot = await FirebaseFirestore.instance.collection('items').get();
+                    for (var roomId in widget.booking.roomIds) {
+                      for (var doc in snapshot.docs) {
+                        List rooms = doc.data()['rooms'] ?? [];
+                        if (rooms.any((r) => r['id'] == roomId)) {
+                          String roomName = rooms.firstWhere((r) => r['id'] == roomId)['name'];
+                          await db.updateRoomCondition(doc.id, roomName, RoomCondition.kosong);
+                        }
+                      }
+                    }
+                    if (mounted) { 
+                      Navigator.pop(context); // Tutup pop up alasan
+                      Navigator.pop(context); // Tutup dialog tinjau
+                    }
+                  } catch (e) { debugPrint("Gagal: $e"); }
+                  finally { if (mounted) setPopUpState(() => _isProcessing = false); }
+                },
+                child: _isProcessing ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text("Tolak", style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        }
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final DatabaseService db = DatabaseService();
-
     return Dialog(
       backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       child: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('bookings').doc(booking.id).get(),
+        future: FirebaseFirestore.instance.collection('bookings').doc(widget.booking.id).get(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()));
-          
+          if (!snapshot.hasData) return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
           final data = snapshot.data?.data() as Map<String, dynamic>? ?? {};
           final String kategoriTamu = data['user_type'] ?? "eksternal"; 
-          final bool isWisma = !booking.itemName.toLowerCase().contains("kelas") && !booking.itemName.toLowerCase().contains("aula");
+          final bool isWisma = !widget.booking.itemName.toLowerCase().contains("kelas") && !widget.booking.itemName.toLowerCase().contains("aula");
 
           return SingleChildScrollView(
             child: Padding(
@@ -417,88 +555,23 @@ class DialogTinjauPemesanan extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Tinjau Pemesanan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, size: 20)),
-                    ],
-                  ),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Tinjau Pemesanan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, size: 20))]),
                   const Divider(height: 30),
-                  
                   _rowInfo("Tipe Pesanan", isWisma ? "Wisma (${kategoriTamu.toUpperCase()})" : "Ruangan/Kelas"),
-
                   _sectionHeader("DATA PEMESAN"),
-                  _rowInfo("Nama Lengkap", booking.userName),
+                  _rowInfo("Nama Lengkap", widget.booking.userName),
                   _rowInfo("NIK", data['nik'] ?? "-"),
-                  
-                  if (kategoriTamu == "internal" || !isWisma) ...[
-                    _rowInfo("NIP", data['nip'] ?? "-"),
-                  ],
-                  
-                  if (isWisma && kategoriTamu == "eksternal") ...[
-                    _rowInfo("Alamat", data['address'] ?? "-"),
-                    _rowInfo("NPWP", data['npwp'] ?? "-"),
-                  ],
-
+                  if (kategoriTamu == "internal" || !isWisma) _rowInfo("NIP", data['nip'] ?? "-"),
                   _sectionHeader("DETAIL PESANAN"),
-                  _rowInfo("Item", booking.itemName),
-                  _rowInfo("Kamar/Kelas", booking.roomIds.join(", ").replaceAll('_', ' ').toUpperCase()),
-                  _rowInfo("Periode", "${DateFormat('dd MMM').format(booking.start)} - ${DateFormat('dd MMM yyyy').format(booking.end)}"),
-                  
-                  if (isWisma && kategoriTamu == "eksternal") ...[
-                    _rowInfo("Tamu Laki-laki", "${data['male_count'] ?? 0}"),
-                    _rowInfo("Tamu Perempuan", "${data['female_count'] ?? 0}"),
-                  ] else ...[
-                    _rowInfo("Jumlah Tamu", "${data['guest_count'] ?? 0}"),
-                  ],
-
-                  _sectionHeader("DOKUMEN LAMPIRAN"),
-                  if (data['assignment_letter_url'] != null && data['assignment_letter_url'].toString().isNotEmpty)
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.description, color: Colors.orange),
-                      title: const Text("Surat Tugas / Pendaftaran", style: TextStyle(fontSize: 11)),
-                      trailing: const Icon(Icons.open_in_new, size: 18),
-                      onTap: () => _launchURL(data['assignment_letter_url']),
-                    )
-                  else
-                    const Text("Tidak ada surat tugas", style: TextStyle(fontSize: 10, color: Colors.grey)),
-
-                  if (data['payment_proof_url'] != null && data['payment_proof_url'].toString().isNotEmpty)
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.receipt_long, color: Colors.green),
-                      title: const Text("Bukti Pembayaran", style: TextStyle(fontSize: 11)),
-                      trailing: const Icon(Icons.open_in_new, size: 18),
-                      onTap: () => _launchURL(data['payment_proof_url']),
-                    ),
-
+                  _rowInfo("Item", widget.booking.itemName),
+                  _rowInfo("Kamar/Kelas", widget.booking.roomIds.join(", ").replaceAll('_', ' ').toUpperCase()),
                   const SizedBox(height: 32),
-                  if (booking.status == BookingStatus.pending)
+                  if (widget.booking.status == BookingStatus.pending)
                     Row(
                       children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () async {
-                              await db.rejectBooking(booking.id, "Ditolak", "", booking.roomIds);
-                              if (context.mounted) Navigator.pop(context);
-                            }, 
-                            style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                            child: const Text("Tolak", style: TextStyle(color: Colors.red))
-                          )
-                        ),
+                        Expanded(child: OutlinedButton(onPressed: _showRejectDialog, style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red)), child: const Text("Tolak", style: TextStyle(color: Colors.red)))),
                         const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              await db.approveBooking(booking.id);
-                              if (context.mounted) Navigator.pop(context);
-                            }, 
-                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008996), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                            child: const Text("Terima", style: TextStyle(color: Colors.white))
-                          )
-                        ),
+                        Expanded(child: ElevatedButton(onPressed: () async { await db.approveBooking(widget.booking.id); if (mounted) Navigator.pop(context); }, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008996)), child: const Text("Terima", style: TextStyle(color: Colors.white)))),
                       ],
                     )
                 ],
@@ -549,7 +622,9 @@ class DialogTinjauPengaduan extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () async {
                     try {
-                      Navigator.pop(context);
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                      }
                       if (complaint.status == ComplaintStatus.pending) {
                         await db.startRepair(complaint.id, "", complaint.roomId);
                       } else {

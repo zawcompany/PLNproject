@@ -78,7 +78,6 @@ class _FormKelasPageState extends State<FormKelasPage> {
         final user = FirebaseAuth.instance.currentUser;
         if (user == null) throw "User tidak terautentikasi";
 
-        // Buat objek booking khusus kelas
         final newBooking = BookingModel(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           userId: user.uid,
@@ -87,12 +86,16 @@ class _FormKelasPageState extends State<FormKelasPage> {
           itemName: widget.item.title,
           start: selectedDate!.start,
           end: selectedDate!.end,
-          totalPayment: 0, // Kelas biasanya gratis
+          totalPayment: 0,
           status: BookingStatus.pending,
-          paymentProof: suratTugas?.path, // Surat tugas sebagai bukti
+          paymentProof: suratTugas?.path,
+          // Data Tambahan
+          nik: nikController.text.trim(),
+          nip: nipController.text.trim(),
+          guestCount: int.tryParse(tamuController.text) ?? 0,
+          userType: 'internal',
         );
 
-        // Kirim ke database
         await _db.createBooking(newBooking, widget.item.id);
 
         if (!mounted) return;
@@ -105,10 +108,6 @@ class _FormKelasPageState extends State<FormKelasPage> {
       } finally {
         if (mounted) setState(() => _isSubmitting = false);
       }
-    } else if (selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Silakan pilih tanggal peminjaman")),
-      );
     }
   }
 

@@ -82,23 +82,26 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
         final user = FirebaseAuth.instance.currentUser;
         if (user == null) throw "User tidak terautentikasi";
 
-        // 1. Buat Objek Booking
         final newBooking = BookingModel(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           userId: user.uid,
           userName: namaController.text.trim(),
-          roomIds: [widget.room.id], // ID Kamar spesifik
+          roomIds: [widget.room.id],
           itemName: widget.item.title,
           start: selectedDate!.start,
           end: selectedDate!.end,
           totalPayment: totalHarga.toDouble(),
           status: BookingStatus.pending,
-          // Catatan: Jika ingin simpan foto, idealnya upload ke Storage dulu lalu ambil URL-nya
-          // Untuk sekarang kita simpan path lokal atau placeholder
           paymentProof: buktiPembayaran!.path, 
+          // Data Tambahan
+          nik: nikController.text.trim(),
+          address: alamatController.text.trim(),
+          npwp: npwpController.text.trim(),
+          maleCount: int.tryParse(lakiController.text) ?? 0,
+          femaleCount: int.tryParse(perempuanController.text) ?? 0,
+          userType: 'eksternal',
         );
 
-        // 2. Kirim ke DatabaseService
         await _db.createBooking(newBooking, widget.item.id);
 
         if (!mounted) return;
@@ -221,7 +224,7 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
                 ),
               ),
 
-              // 3. FORM BODY (Layout Tetap)
+              // 3. FORM BODY
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Form(

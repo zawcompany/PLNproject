@@ -144,6 +144,12 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
           totalPayment: totalHarga.toDouble(),
           status: BookingStatus.pending,
           paymentProof: suratTugas?.path,
+          // Data Tambahan
+          nik: nikController.text.trim(),
+          nip: nipController.text.trim(),
+          maleCount: int.tryParse(lakiController.text) ?? 0,
+          femaleCount: int.tryParse(perempuanController.text) ?? 0,
+          userType: 'internal',
         );
 
         await _db.createBooking(newBooking, widget.item.id);
