@@ -20,9 +20,135 @@ class _RiwayatPageState extends State<RiwayatPage> {
   List<String> selectedKelas = ["Semua"];
   List<String> selectedStatus = ["Semua"];
 
-  // State untuk mode hapus
   bool isSelectionMode = false;
   List<String> selectedBookingIds = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _markUpdatesAsRead();
+  }
+
+  void _markUpdatesAsRead() async {
+    final String uid = FirebaseAuth.instance.currentUser?.uid ?? "";
+    final snapshot = await FirebaseFirestore.instance
+        .collection('bookings')
+        .where('userId', isEqualTo: uid)
+        .where('isRead', isEqualTo: false)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      WriteBatch batch = FirebaseFirestore.instance.batch();
+      for (var doc in snapshot.docs) {
+        batch.update(doc.reference, {'isRead': true});
+      }
+      await batch.commit();
+    }
+  }
+
+  // --- DIALOG TINJAU DATA DIRI (DETAIL RESERVASI) ---
+  void _showDetailDialog(BookingModel booking) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Detail Reservasi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, size: 20)),
+                  ],
+                ),
+                const Divider(height: 30),
+                
+                _buildDetailRow("Nama Pemesan", booking.userName),
+                _buildDetailRow("NIK", booking.nik ?? "-"),
+                if (booking.nip != null && booking.nip!.isNotEmpty) _buildDetailRow("NIP", booking.nip!),
+                
+                // Alamat sekarang akan otomatis ter-enter jika panjang
+                if (booking.address != null && booking.address!.isNotEmpty) _buildDetailRow("Alamat", booking.address!),
+                
+                _buildDetailRow("Kamar/Kelas", booking.itemName),
+                _buildDetailRow("Periode", "${DateFormat('dd MMM yyyy').format(booking.start)} - ${DateFormat('dd MMM yyyy').format(booking.end)}"),
+                
+                if (booking.userType == 'eksternal') ...[
+                  _buildDetailRow("Tamu Laki-laki", "${booking.maleCount ?? 0}"),
+                  _buildDetailRow("Tamu Perempuan", "${booking.femaleCount ?? 0}"),
+                ] else ...[
+                  _buildDetailRow("Jumlah Tamu", "${booking.guestCount ?? 0}"),
+                ],
+
+                // BAGIAN ALASAN PENOLAKAN
+                if (booking.status == BookingStatus.rejected) ...[
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  const Text("Alasan Penolakan:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.red)),
+                  const SizedBox(height: 6),
+                  Text(
+                    (booking.rejectReason == null || booking.rejectReason!.isEmpty) 
+                        ? "Tidak ada alasan spesifik." 
+                        : booking.rejectReason!, 
+                    style: const TextStyle(fontSize: 12, color: Colors.black87, fontStyle: FontStyle.italic),
+                  ),
+                ],
+
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 45,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                    ),
+                    child: const Text("Tutup", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Widget Baris Detail dengan Skema Flex 1:1 agar tidak kepanjangan ke samping
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Label mengambil porsi kiri (flex 1)
+          Expanded(
+            flex: 1,
+            child: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          ),
+          const SizedBox(width: 10),
+          // Nilai mengambil porsi kanan (flex 1) dan rata kanan
+          Expanded(
+            flex: 1,
+            child: Text(
+              value, 
+              textAlign: TextAlign.right, 
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              softWrap: true, // Otomatis enter jika teks panjang
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _showFilterDialog() {
     showDialog(
@@ -82,7 +208,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
     );
   }
 
-  // Fungsi Hapus Massal
   Future<void> _deleteSelectedBookings() async {
     bool confirm = await showDialog(
       context: context,
@@ -159,7 +284,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
           Expanded(child: _buildHistoryList()),
         ],
       ),
-      // Tombol aksi melayang jika dalam mode seleksi
       floatingActionButton: isSelectionMode && selectedBookingIds.isNotEmpty
           ? FloatingActionButton.extended(
               onPressed: _deleteSelectedBookings,
@@ -190,13 +314,9 @@ class _RiwayatPageState extends State<RiwayatPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            "Riwayat Pemesanan",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor),
-          ),
+          Text("Riwayat Pemesanan", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor)),
           Row(
             children: [
-              // TOMBOL HAPUS (Style sama dengan Filter)
               GestureDetector(
                 onTap: () {
                   setState(() {
@@ -207,10 +327,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    // Warna merah transparan jika mode hapus aktif, jika tidak maka teal transparan
-                    color: isSelectionMode 
-                        ? Colors.red.withOpacity(0.1) 
-                        : primaryColor.withOpacity(0.1),
+                    color: isSelectionMode ? Colors.red.withValues(alpha: 0.1) : primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -220,16 +337,12 @@ class _RiwayatPageState extends State<RiwayatPage> {
                   ),
                 ),
               ),
-              const SizedBox(width: 10), // Jarak antar tombol
-              // TOMBOL FILTER
+              const SizedBox(width: 10),
               GestureDetector(
                 onTap: _showFilterDialog,
                 child: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  decoration: BoxDecoration(color: primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                   child: Icon(Icons.filter_list_rounded, color: primaryColor, size: 20),
                 ),
               ),
@@ -257,7 +370,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
           BookingModel.fromMap(doc.id, doc.data() as Map<String, dynamic>)
         ).toList();
 
-        // LOGIKA FILTER
         bookings = bookings.where((item) {
           String name = item.itemName;
           String status = item.status.name;
@@ -317,9 +429,8 @@ class _RiwayatPageState extends State<RiwayatPage> {
     }
 
     bool isSelected = selectedBookingIds.contains(booking.id);
-
     bool canBeDeleted = booking.status == BookingStatus.approved || 
-                      booking.status == BookingStatus.rejected;
+                        booking.status == BookingStatus.rejected;
 
     return GestureDetector(
       onTap: isSelectionMode ? () {
@@ -332,16 +443,12 @@ class _RiwayatPageState extends State<RiwayatPage> {
             }
           });
         } else {
-          // Beri notifikasi jika user mencoba memilih yang masih 'pending'
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Pesanan yang masih menunggu tidak dapat dihapus"),
-              duration: Duration(seconds: 1),
-            ),
+            const SnackBar(content: Text("Pesanan yang masih menunggu tidak dapat dihapus"), duration: Duration(seconds: 1)),
           );
         }
       } : null,
-      
+
       child: Container(
         margin: const EdgeInsets.only(bottom: 15),
         padding: const EdgeInsets.all(16),
@@ -353,7 +460,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
             width: isSelected ? 2 : 1,
           ),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
           ],
         ),
         child: Row(
@@ -401,10 +508,27 @@ class _RiwayatPageState extends State<RiwayatPage> {
                             style: const TextStyle(fontSize: 11, color: Colors.black87)),
                         ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(8)),
-                        child: Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                      GestureDetector(
+                        onTap: () => _showDetailDialog(booking),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: bgColor,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: statusColor.withValues(alpha: 0.3))
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                statusLabel, 
+                                style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(Icons.visibility_outlined, size: 12, color: statusColor),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -87,6 +88,8 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
   }
 
   Future<void> _deleteSelectedItems() async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     bool confirm = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -108,13 +111,13 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
       }
       
       await batch.commit();
+      if (!mounted) return;
+      
       setState(() {
         isSelectionMode = false;
         selectedItemIds.clear();
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Berhasil menghapus riwayat")));
-      }
+      scaffoldMessenger.showSnackBar(const SnackBar(content: Text("Berhasil menghapus riwayat")));
     }
   }
 
@@ -230,16 +233,18 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
           bool matchesWisma = false;
           if (selectedWisma.contains("Semua")) {
             matchesWisma = !listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
-          } else if (selectedWisma.isNotEmpty) {
+          } else {
             matchesWisma = selectedWisma.any((w) => name.toLowerCase().contains(w.toLowerCase()));
           }
 
           bool matchesKelas = false;
           if (selectedKelas.contains("Semua")) {
             matchesKelas = listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
-          } else if (selectedKelas.isNotEmpty) {
+          } else {
             matchesKelas = selectedKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
           }
+
+          bool categoryMatch = matchesWisma || matchesKelas;
 
           bool statusMatch = false;
           if (selectedStatus.contains("Semua") || selectedStatus.isEmpty) {
@@ -255,7 +260,7 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
               if (selectedStatus.contains("Selesai") && status == 'resolved') statusMatch = true;
             }
           }
-          return (matchesWisma || matchesKelas) && statusMatch;
+          return categoryMatch && statusMatch;
         }).toList();
 
         allItems.sort((a, b) {
@@ -461,21 +466,59 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
   final DatabaseService db = DatabaseService();
   bool _isProcessing = false;
 
-  Widget _rowInfo(String l, String v) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4), 
+  Widget _rowInfo(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
     child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: Text(l, style: const TextStyle(fontSize: 11, color: Colors.grey))), 
-        Text(v, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.right)
-      ]
-    )
+        // Bagian Label (Kiri) - Mengambil 50% ruang
+        Expanded(
+          flex: 1,
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+        ),
+        const SizedBox(width: 10),
+        // Bagian Nilai (Kanan) - Mengambil 50% ruang sisanya
+        Expanded(
+          flex: 1,
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            softWrap: true, // Otomatis pindah baris jika panjang
+          ),
+        ),
+      ],
+    ),
   );
 
   Widget _sectionHeader(String title) => Padding(
     padding: const EdgeInsets.only(top: 16, bottom: 8),
     child: Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF008996))),
   );
+
+  // Fungsi preview file (Image Picker Path atau URL)
+  Widget _buildFilePreview(String? path, String label) {
+    if (path == null || path.isEmpty) {
+      return Text("Tidak ada $label", style: const TextStyle(fontSize: 10, color: Colors.grey));
+    }
+    bool isNetwork = path.startsWith('http');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: isNetwork 
+            ? Image.network(path, height: 180, width: double.infinity, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Text("Gagal memuat gambar"))
+            : Image.file(File(path), height: 180, width: double.infinity, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Text("Dokumen tersimpan secara lokal")),
+        ),
+      ],
+    );
+  }
 
   void _showRejectDialog() {
     final TextEditingController reasonController = TextEditingController();
@@ -507,21 +550,26 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 onPressed: _isProcessing ? null : () async {
                   setPopUpState(() => _isProcessing = true);
+                  final navigator = Navigator.of(context);
                   try {
                     await db.rejectBooking(widget.booking.id, "rejected", reasonController.text.trim(), widget.booking.roomIds);
+                    // Tandai belum dibaca oleh staff agar notifikasi muncul
+                    await FirebaseFirestore.instance.collection('bookings').doc(widget.booking.id).update({'isRead': false});
+                    
                     final snapshot = await FirebaseFirestore.instance.collection('items').get();
                     for (var roomId in widget.booking.roomIds) {
                       for (var doc in snapshot.docs) {
                         List rooms = doc.data()['rooms'] ?? [];
-                        if (rooms.any((r) => r['id'] == roomId)) {
-                          String roomName = rooms.firstWhere((r) => r['id'] == roomId)['name'];
-                          await db.updateRoomCondition(doc.id, roomName, RoomCondition.kosong);
+                        int idx = rooms.indexWhere((r) => r['id'] == roomId);
+                        if (idx != -1) {
+                          rooms[idx]['condition'] = 'kosong';
+                          await FirebaseFirestore.instance.collection('items').doc(doc.id).update({'rooms': rooms});
                         }
                       }
                     }
                     if (mounted) { 
-                      Navigator.pop(context); // Tutup pop up alasan
-                      Navigator.pop(context); // Tutup dialog tinjau
+                      navigator.pop(); 
+                      navigator.pop(); 
                     }
                   } catch (e) { debugPrint("Gagal: $e"); }
                   finally { if (mounted) setPopUpState(() => _isProcessing = false); }
@@ -547,6 +595,7 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
           final data = snapshot.data?.data() as Map<String, dynamic>? ?? {};
           final String kategoriTamu = data['user_type'] ?? "eksternal"; 
           final bool isWisma = !widget.booking.itemName.toLowerCase().contains("kelas") && !widget.booking.itemName.toLowerCase().contains("aula");
+          final String? lampiran = data['paymentProof'];
 
           return SingleChildScrollView(
             child: Padding(
@@ -557,21 +606,35 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
                 children: [
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Tinjau Pemesanan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, size: 20))]),
                   const Divider(height: 30),
-                  _rowInfo("Tipe Pesanan", isWisma ? "Wisma (${kategoriTamu.toUpperCase()})" : "Ruangan/Kelas"),
+                  _rowInfo("Tipe", isWisma ? "Wisma (${kategoriTamu.toUpperCase()})" : "Ruangan/Kelas"),
                   _sectionHeader("DATA PEMESAN"),
-                  _rowInfo("Nama Lengkap", widget.booking.userName),
+                  _rowInfo("Nama", widget.booking.userName),
                   _rowInfo("NIK", data['nik'] ?? "-"),
                   if (kategoriTamu == "internal" || !isWisma) _rowInfo("NIP", data['nip'] ?? "-"),
+                  if (isWisma && kategoriTamu == "eksternal") ...[
+                    _rowInfo("Alamat", data['address'] ?? "-"),
+                    _rowInfo("NPWP", data['npwp'] ?? "-"),
+                  ],
                   _sectionHeader("DETAIL PESANAN"),
                   _rowInfo("Item", widget.booking.itemName),
                   _rowInfo("Kamar/Kelas", widget.booking.roomIds.join(", ").replaceAll('_', ' ').toUpperCase()),
+                  _rowInfo("Total Bayar", "Rp ${widget.booking.totalPayment.toInt()}"),
+                  const SizedBox(height: 10),
+                  _sectionHeader("DOKUMEN LAMPIRAN"),
+                  _buildFilePreview(lampiran, isWisma && kategoriTamu == "eksternal" ? "Bukti Pembayaran" : "Surat Tugas"),
                   const SizedBox(height: 32),
                   if (widget.booking.status == BookingStatus.pending)
                     Row(
                       children: [
-                        Expanded(child: OutlinedButton(onPressed: _showRejectDialog, style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red)), child: const Text("Tolak", style: TextStyle(color: Colors.red)))),
+                        Expanded(child: OutlinedButton(onPressed: _showRejectDialog, style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text("Tolak", style: TextStyle(color: Colors.red)))),
                         const SizedBox(width: 12),
-                        Expanded(child: ElevatedButton(onPressed: () async { await db.approveBooking(widget.booking.id); if (mounted) Navigator.pop(context); }, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008996)), child: const Text("Terima", style: TextStyle(color: Colors.white)))),
+                        Expanded(child: ElevatedButton(onPressed: () async { 
+                          final navigator = Navigator.of(context);
+                          await db.approveBooking(widget.booking.id); 
+                          // Tandai belum dibaca oleh staff agar notifikasi muncul
+                          await FirebaseFirestore.instance.collection('bookings').doc(widget.booking.id).update({'isRead': false});
+                          if (mounted) navigator.pop(); 
+                        }, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008996), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text("Terima", style: TextStyle(color: Colors.white)))),
                       ],
                     )
                 ],
@@ -621,14 +684,15 @@ class DialogTinjauPengaduan extends StatelessWidget {
                 height: 48,
                 child: ElevatedButton(
                   onPressed: () async {
+                    final navigator = Navigator.of(context);
                     try {
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                      }
                       if (complaint.status == ComplaintStatus.pending) {
                         await db.startRepair(complaint.id, "", complaint.roomId);
                       } else {
                         await db.resolveComplaint(complaint.id, "", complaint.roomId);
+                      }
+                      if (navigator.canPop()) {
+                        navigator.pop();
                       }
                     } catch (e) {
                       debugPrint("Gagal update status: $e");

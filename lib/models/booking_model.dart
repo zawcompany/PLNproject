@@ -21,6 +21,7 @@ class BookingModel {
   final int? femaleCount;
   final int? guestCount;
   final String? userType;
+  final bool isRead;
 
   BookingModel({
     required this.id,
@@ -43,6 +44,7 @@ class BookingModel {
     this.femaleCount,
     this.guestCount,
     this.userType,
+    this.isRead = true,
   });
 
   Map<String, dynamic> toMap() {
@@ -67,6 +69,7 @@ class BookingModel {
       'female_count': femaleCount,
       'guest_count': guestCount,
       'user_type': userType,
+      'isRead': isRead,
     };
   }
 
@@ -95,6 +98,7 @@ class BookingModel {
       femaleCount: map['female_count'],
       guestCount: map['guest_count'],
       userType: map['user_type'],
+      isRead: map['isRead'] ?? true,
     );
   }
 }

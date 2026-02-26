@@ -3,11 +3,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:monitoring_app/widgets/navbar.dart';
 import '../../models/item_model.dart';
-import '../../services/database_service.dart'; // Import Service
+import '../../services/database_service.dart';
 import 'detail.dart';
 import 'wisma_int_general.dart'; 
 import 'wisma_eks_general.dart';
-import 'staff_notif.dart'; 
 import 'kelas_general.dart'; 
 
 class DashboardAlternative extends StatefulWidget {
@@ -21,10 +20,8 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
   static const Color primaryTeal = Color(0xFF008996);
   static const Color blueBoxColor = Color(0xffbfe0e6);
   
-  // Panggil DatabaseService
   final DatabaseService _db = DatabaseService();
 
-  // Fungsi Pop-up Pilihan Jenis Pesanan Wisma (General)
   void _showBookingTypeDialog() {
     showDialog(
       context: context,
@@ -88,7 +85,7 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
     return Scaffold(
       backgroundColor: const Color(0xfff5f5f5),
       body: StreamBuilder<List<ItemModel>>(
-        stream: _db.getItems(), // Mengambil data real-time dari Firestore
+        stream: _db.getItems(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: primaryTeal));
@@ -121,7 +118,7 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                       Positioned.fill(
                         child: Container(
                           decoration: BoxDecoration(
-                            color: blueBoxColor.withOpacity(0.5),
+                            color: blueBoxColor.withValues(alpha: 0.5),
                           ),
                         ),
                       ),
@@ -135,53 +132,26 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 20),
-                      // 2. Row Sapaan & Notifikasi
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      // 2. Sapaan (Tanpa Notifikasi)
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Selamat Datang,",
-                                  style: TextStyle(fontSize: 14, color: Colors.black54)),
-                              Text(
-                                "PLN UPDL Makassar",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: primaryTeal,
-                                ),
-                              ),
-                            ],
-                          ),
-                          InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const NotificationStaffPage()),
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 5,
-                                    )
-                                  ]),
-                              child: const Icon(Icons.notifications_none, color: primaryTeal),
+                          Text("Selamat Datang,",
+                              style: TextStyle(fontSize: 14, color: Colors.black54)),
+                          Text(
+                            "PLN UPDL Makassar",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: primaryTeal,
                             ),
-                          )
+                          ),
                         ],
                       ),
 
                       const SizedBox(height: 25),
 
-                      // 3. Dua Box Status (Booking Wisma & Kelas)
+                      // 3. Dua Box Status
                       Row(
                         children: [
                           Expanded(
@@ -266,7 +236,7 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 4),
             )
@@ -334,7 +304,6 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
               image: DecorationImage(
-                  // Mendukung network image dari Firestore atau local asset
                   image: item.imagePath.startsWith('http') 
                       ? NetworkImage(item.imagePath) as ImageProvider
                       : AssetImage(item.imagePath), 
@@ -347,8 +316,8 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                   colors: [
-                    Colors.black.withOpacity(0.8),
-                    Colors.black.withOpacity(0.2),
+                    Colors.black.withValues(alpha: 0.8),
+                    Colors.black.withValues(alpha: 0.2),
                     Colors.transparent,
                   ],
                   stops: const [0.0, 0.4, 0.6],
