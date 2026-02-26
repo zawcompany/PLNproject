@@ -73,7 +73,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
                 _buildDetailRow("NIK", booking.nik ?? "-"),
                 if (booking.nip != null && booking.nip!.isNotEmpty) _buildDetailRow("NIP", booking.nip!),
                 
-                // Alamat sekarang akan otomatis ter-enter jika panjang
                 if (booking.address != null && booking.address!.isNotEmpty) _buildDetailRow("Alamat", booking.address!),
                 
                 _buildDetailRow("Kamar/Kelas", booking.itemName),
@@ -122,27 +121,24 @@ class _RiwayatPageState extends State<RiwayatPage> {
     );
   }
 
-  // Widget Baris Detail dengan Skema Flex 1:1 agar tidak kepanjangan ke samping
   Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Label mengambil porsi kiri (flex 1)
           Expanded(
             flex: 1,
             child: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
           ),
           const SizedBox(width: 10),
-          // Nilai mengambil porsi kanan (flex 1) dan rata kanan
           Expanded(
             flex: 1,
             child: Text(
               value, 
               textAlign: TextAlign.right, 
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-              softWrap: true, // Otomatis enter jika teks panjang
+              softWrap: true, 
             ),
           ),
         ],
@@ -511,22 +507,19 @@ class _RiwayatPageState extends State<RiwayatPage> {
                       GestureDetector(
                         onTap: () => _showDetailDialog(booking),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), 
                           decoration: BoxDecoration(
                             color: bgColor,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: statusColor.withValues(alpha: 0.3))
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                statusLabel, 
-                                style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)
-                              ),
-                              const SizedBox(width: 4),
-                              Icon(Icons.visibility_outlined, size: 12, color: statusColor),
-                            ],
+                          child: Text(
+                            statusLabel, 
+                            style: TextStyle(
+                              color: statusColor, 
+                              fontSize: 11, 
+                              fontWeight: FontWeight.bold
+                            )
                           ),
                         ),
                       ),

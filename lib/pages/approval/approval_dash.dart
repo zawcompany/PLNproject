@@ -112,7 +112,7 @@ class _DashApprovalState extends State<DashApproval> {
                 child: _buildStatBox(
                   bgColor: blueBoxColor,
                   angka: count.toString(),
-                  title: "Permintaan",
+                  title: "Pesanan Wisma",
                   svgPath: "lib/assets/images/rumahdpn.svg",
                 ),
               );
@@ -200,12 +200,18 @@ class _DashApprovalState extends State<DashApproval> {
 
   Widget _buildCarousel(List<ItemModel> data) {
     return CarouselSlider(
-      options: CarouselOptions(height: 140, viewportFraction: 0.6, enableInfiniteScroll: false, padEnds: false),
+      options: CarouselOptions(
+        height: 140, 
+        viewportFraction: 0.52, 
+        enableInfiniteScroll: false, 
+        padEnds: false,
+        disableCenter: true,
+      ),
       items: data.map((item) {
         return Container(
-          margin: const EdgeInsets.only(right: 12),
+          margin: const EdgeInsets.only(right: 16), 
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(18), 
             image: DecorationImage(
               image: item.imagePath.startsWith('http') 
                   ? NetworkImage(item.imagePath) as ImageProvider 
@@ -215,12 +221,19 @@ class _DashApprovalState extends State<DashApproval> {
           ),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [Colors.black.withOpacity(0.8), Colors.transparent]),
+              borderRadius: BorderRadius.circular(18),
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter, 
+                end: Alignment.topCenter, 
+                colors: [Colors.black.withValues(alpha: 0.8), Colors.transparent]
+              ),
             ),
             padding: const EdgeInsets.all(12),
             alignment: Alignment.bottomLeft,
-            child: Text(item.title, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            child: Text(
+              item.title, 
+              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)
+            ),
           ),
         );
       }).toList(),

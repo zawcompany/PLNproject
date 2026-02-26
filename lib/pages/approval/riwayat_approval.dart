@@ -466,30 +466,63 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
   final DatabaseService db = DatabaseService();
   bool _isProcessing = false;
 
+  // FUNGSI CHECKOUT MANUAL
+  Future<void> _handleManualCheckout() async {
+    bool confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Konfirmasi Checkout"),
+        content: const Text("Apakah Anda yakin ingin menyelesaikan pesanan ini sekarang? Kamar akan otomatis tersedia kembali."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Batal")),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Ya, Checkout", style: TextStyle(color: Color(0xFF008996)))),
+        ],
+      ),
+    ) ?? false;
+
+    if (confirm) {
+      setState(() => _isProcessing = true);
+      try {
+        final snapshot = await FirebaseFirestore.instance.collection('items').get();
+        
+        // Loop Room IDs yang ada di booking ini untuk di-reset ke 'kosong'
+        for (var roomId in widget.booking.roomIds) {
+          for (var doc in snapshot.docs) {
+            List rooms = doc.data()['rooms'] ?? [];
+            int idx = rooms.indexWhere((r) => r['id'] == roomId);
+            if (idx != -1) {
+              rooms[idx]['condition'] = 'kosong';
+              await FirebaseFirestore.instance.collection('items').doc(doc.id).update({'rooms': rooms});
+            }
+          }
+        }
+        
+        // Tandai booking sebagai isRead false agar staff tahu ada update (opsional)
+        await FirebaseFirestore.instance.collection('bookings').doc(widget.booking.id).update({
+          'isRead': false,
+          // 'status': 'completed' // Jika ingin ganti status booking juga bisa di-uncomment
+        });
+
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Berhasil Checkout. Kamar kini tersedia.")));
+        }
+      } catch (e) {
+        debugPrint("Error Checkout: $e");
+      } finally {
+        if (mounted) setState(() => _isProcessing = false);
+      }
+    }
+  }
+
   Widget _rowInfo(String label, String value) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 6),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Bagian Label (Kiri) - Mengambil 50% ruang
-        Expanded(
-          flex: 1,
-          child: Text(
-            label,
-            style: const TextStyle(fontSize: 11, color: Colors.grey),
-          ),
-        ),
+        Expanded(flex: 1, child: Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey))),
         const SizedBox(width: 10),
-        // Bagian Nilai (Kanan) - Mengambil 50% ruang sisanya
-        Expanded(
-          flex: 1,
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-            softWrap: true, // Otomatis pindah baris jika panjang
-          ),
-        ),
+        Expanded(flex: 1, child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold), softWrap: true)),
       ],
     ),
   );
@@ -499,11 +532,8 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
     child: Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF008996))),
   );
 
-  // Fungsi preview file (Image Picker Path atau URL)
   Widget _buildFilePreview(String? path, String label) {
-    if (path == null || path.isEmpty) {
-      return Text("Tidak ada $label", style: const TextStyle(fontSize: 10, color: Colors.grey));
-    }
+    if (path == null || path.isEmpty) return Text("Tidak ada $label", style: const TextStyle(fontSize: 10, color: Colors.grey));
     bool isNetwork = path.startsWith('http');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -530,17 +560,19 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
           return AlertDialog(
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text("Konfirmasi", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            title: const Text("Konfirmasi Penolakan", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Berikan alasan penolakan (opsional):", style: TextStyle(fontSize: 13)),
                 const SizedBox(height: 12),
                 TextField(
                   controller: reasonController,
                   maxLines: 3,
-                  decoration: InputDecoration(hintText: "Tulis alasan di sini...", border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+                  decoration: InputDecoration(
+                    hintText: "Tulis alasan di sini...", 
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    contentPadding: const EdgeInsets.all(12)
+                  ),
                 ),
               ],
             ),
@@ -552,9 +584,10 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
                   setPopUpState(() => _isProcessing = true);
                   final navigator = Navigator.of(context);
                   try {
-                    await db.rejectBooking(widget.booking.id, "rejected", reasonController.text.trim(), widget.booking.roomIds);
-                    // Tandai belum dibaca oleh staff agar notifikasi muncul
-                    await FirebaseFirestore.instance.collection('bookings').doc(widget.booking.id).update({'isRead': false});
+                    String alasan = reasonController.text.trim();
+                    if (alasan.isEmpty) alasan = "Tidak ada alasan spesifik.";
+                    await db.rejectBooking(widget.booking.id, "rejected", alasan, widget.booking.roomIds);
+                    await FirebaseFirestore.instance.collection('bookings').doc(widget.booking.id).update({'rejectReason': alasan, 'isRead': false});
                     
                     final snapshot = await FirebaseFirestore.instance.collection('items').get();
                     for (var roomId in widget.booking.roomIds) {
@@ -567,10 +600,7 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
                         }
                       }
                     }
-                    if (mounted) { 
-                      navigator.pop(); 
-                      navigator.pop(); 
-                    }
+                    if (mounted) { navigator.pop(); navigator.pop(); }
                   } catch (e) { debugPrint("Gagal: $e"); }
                   finally { if (mounted) setPopUpState(() => _isProcessing = false); }
                 },
@@ -596,6 +626,7 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
           final String kategoriTamu = data['user_type'] ?? "eksternal"; 
           final bool isWisma = !widget.booking.itemName.toLowerCase().contains("kelas") && !widget.booking.itemName.toLowerCase().contains("aula");
           final String? lampiran = data['paymentProof'];
+          final String? rejectReason = data['rejectReason'];
 
           return SingleChildScrollView(
             child: Padding(
@@ -606,6 +637,25 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
                 children: [
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Tinjau Pemesanan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, size: 20))]),
                   const Divider(height: 30),
+                  
+                  if (widget.booking.status == BookingStatus.rejected) ...[
+                    _sectionHeader("STATUS: DITOLAK"),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.red.withOpacity(0.2))),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Alasan Penolakan:", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red)),
+                          const SizedBox(height: 4),
+                          Text(rejectReason ?? "Tidak ada alasan spesifik.", style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic)),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 32),
+                  ],
+
                   _rowInfo("Tipe", isWisma ? "Wisma (${kategoriTamu.toUpperCase()})" : "Ruangan/Kelas"),
                   _sectionHeader("DATA PEMESAN"),
                   _rowInfo("Nama", widget.booking.userName),
@@ -623,6 +673,8 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
                   _sectionHeader("DOKUMEN LAMPIRAN"),
                   _buildFilePreview(lampiran, isWisma && kategoriTamu == "eksternal" ? "Bukti Pembayaran" : "Surat Tugas"),
                   const SizedBox(height: 32),
+
+                  // LOGIKA TOMBOL ACTION
                   if (widget.booking.status == BookingStatus.pending)
                     Row(
                       children: [
@@ -631,12 +683,29 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
                         Expanded(child: ElevatedButton(onPressed: () async { 
                           final navigator = Navigator.of(context);
                           await db.approveBooking(widget.booking.id); 
-                          // Tandai belum dibaca oleh staff agar notifikasi muncul
                           await FirebaseFirestore.instance.collection('bookings').doc(widget.booking.id).update({'isRead': false});
                           if (mounted) navigator.pop(); 
                         }, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008996), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text("Terima", style: TextStyle(color: Colors.white)))),
                       ],
                     )
+                  else if (widget.booking.status == BookingStatus.approved)
+                    // TOMBOL CHECKOUT MANUAL JIKA SUDAH APPROVED
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: _isProcessing ? null : _handleManualCheckout,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        icon: _isProcessing 
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Icon(Icons.logout_rounded, color: Colors.white, size: 18),
+                        label: const Text("Checkout Sekarang", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -647,15 +716,20 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
   }
 }
 
-// --- DIALOG TINJAU PENGADUAN ---
-class DialogTinjauPengaduan extends StatelessWidget {
+class DialogTinjauPengaduan extends StatefulWidget {
   final ComplaintModel complaint;
   const DialogTinjauPengaduan({super.key, required this.complaint});
 
   @override
-  Widget build(BuildContext context) {
-    final DatabaseService db = DatabaseService();
+  State<DialogTinjauPengaduan> createState() => _DialogTinjauPengaduanState();
+}
 
+class _DialogTinjauPengaduanState extends State<DialogTinjauPengaduan> {
+  final DatabaseService db = DatabaseService();
+  bool _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.white,
@@ -676,36 +750,40 @@ class DialogTinjauPengaduan extends StatelessWidget {
             const Divider(height: 30),
             const Text("Masalah:", style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            Text(complaint.description, style: const TextStyle(fontSize: 13)),
+            Text(widget.complaint.description, style: const TextStyle(fontSize: 13)),
             const SizedBox(height: 32),
-            if (complaint.status != ComplaintStatus.resolved)
+            
+            if (widget.complaint.status != ComplaintStatus.resolved)
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: () async {
+                  onPressed: _isLoading ? null : () async {
+                    setState(() => _isLoading = true);
                     final navigator = Navigator.of(context);
                     try {
-                      if (complaint.status == ComplaintStatus.pending) {
-                        await db.startRepair(complaint.id, "", complaint.roomId);
-                      } else {
-                        await db.resolveComplaint(complaint.id, "", complaint.roomId);
+                      if (widget.complaint.status == ComplaintStatus.pending) {
+                        await db.startRepair(widget.complaint.id, "Sedang diperbaiki oleh tim teknis", widget.complaint.roomId);
+                      } else if (widget.complaint.status == ComplaintStatus.repairing) {
+                        await db.resolveComplaint(widget.complaint.id, "Masalah telah diselesaikan", widget.complaint.roomId);
                       }
-                      if (navigator.canPop()) {
-                        navigator.pop();
-                      }
+                      if (mounted) navigator.pop();
                     } catch (e) {
                       debugPrint("Gagal update status: $e");
+                    } finally {
+                      if (mounted) setState(() => _isLoading = false);
                     }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF008996),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
                   ),
-                  child: Text(
-                    complaint.status == ComplaintStatus.repairing ? "Selesaikan" : "Perbaiki", 
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
-                  ),
+                  child: _isLoading 
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text(
+                        widget.complaint.status == ComplaintStatus.repairing ? "Selesaikan" : "Perbaiki", 
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+                      ),
                 ),
               )
           ],

@@ -348,7 +348,7 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
                 if (isFileSelected)
                   const Positioned(
                     right: 16,
-                    child: Text("Berhasil ✔", style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
+                    child: Text("Berhasil", style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
                   ),
               ],
             ),

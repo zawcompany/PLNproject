@@ -285,8 +285,8 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
   Widget _buildCarousel(List<ItemModel> data) {
     return CarouselSlider(
       options: CarouselOptions(
-        height: 140,
-        viewportFraction: 0.6,
+        height: 135, 
+        viewportFraction: 0.52, // Agar lebar item mendekati Expanded box di atas
         enableInfiniteScroll: false,
         padEnds: false,
         scrollDirection: Axis.horizontal,
@@ -302,25 +302,31 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
           child: Container(
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(18), // Sama dengan radius _buildStatBox
               image: DecorationImage(
-                  image: item.imagePath.startsWith('http') 
-                      ? NetworkImage(item.imagePath) as ImageProvider
-                      : AssetImage(item.imagePath), 
-                  fit: BoxFit.cover),
+                image: item.imagePath.startsWith('http') 
+                    ? NetworkImage(item.imagePath) as ImageProvider 
+                    : AssetImage(item.imagePath), 
+                fit: BoxFit.cover
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                )
+              ],
             ),
             child: Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(18),
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                   colors: [
-                    Colors.black.withValues(alpha: 0.8),
-                    Colors.black.withValues(alpha: 0.2),
+                    Colors.black.withValues(alpha: 0.7),
                     Colors.transparent,
                   ],
-                  stops: const [0.0, 0.4, 0.6],
                 ),
               ),
               padding: const EdgeInsets.all(12),
@@ -328,9 +334,10 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
               child: Text(
                 item.title,
                 style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold),
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold
+                ),
               ),
             ),
           ),
