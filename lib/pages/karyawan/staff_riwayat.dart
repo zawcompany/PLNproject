@@ -26,24 +26,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
   @override
   void initState() {
     super.initState();
-    _markUpdatesAsRead();
-  }
-
-  void _markUpdatesAsRead() async {
-    final String uid = FirebaseAuth.instance.currentUser?.uid ?? "";
-    final snapshot = await FirebaseFirestore.instance
-        .collection('bookings')
-        .where('userId', isEqualTo: uid)
-        .where('isRead', isEqualTo: false)
-        .get();
-
-    if (snapshot.docs.isNotEmpty) {
-      WriteBatch batch = FirebaseFirestore.instance.batch();
-      for (var doc in snapshot.docs) {
-        batch.update(doc.reference, {'isRead': true});
-      }
-      await batch.commit();
-    }
+    // Fungsi _markUpdatesAsRead dihapus karena sistem notifikasi tidak digunakan lagi
   }
 
   // --- DIALOG TINJAU DATA DIRI (DETAIL RESERVASI) ---
@@ -72,9 +55,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                 _buildDetailRow("Nama Pemesan", booking.userName),
                 _buildDetailRow("NIK", booking.nik ?? "-"),
                 if (booking.nip != null && booking.nip!.isNotEmpty) _buildDetailRow("NIP", booking.nip!),
-                
                 if (booking.address != null && booking.address!.isNotEmpty) _buildDetailRow("Alamat", booking.address!),
-                
                 _buildDetailRow("Kamar/Kelas", booking.itemName),
                 _buildDetailRow("Periode", "${DateFormat('dd MMM yyyy').format(booking.start)} - ${DateFormat('dd MMM yyyy').format(booking.end)}"),
                 
@@ -85,18 +66,52 @@ class _RiwayatPageState extends State<RiwayatPage> {
                   _buildDetailRow("Jumlah Tamu", "${booking.guestCount ?? 0}"),
                 ],
 
-                // BAGIAN ALASAN PENOLAKAN
+                // BAGIAN ALASAN PENOLAKAN & LOGIKA REFUND
                 if (booking.status == BookingStatus.rejected) ...[
                   const SizedBox(height: 16),
                   const Divider(),
                   const SizedBox(height: 8),
-                  const Text("Alasan Penolakan:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.red)),
+                  const Text("Alasan Penolakan:", 
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.red)),
                   const SizedBox(height: 6),
                   Text(
                     (booking.rejectReason == null || booking.rejectReason!.isEmpty) 
                         ? "Tidak ada alasan spesifik." 
                         : booking.rejectReason!, 
                     style: const TextStyle(fontSize: 12, color: Colors.black87, fontStyle: FontStyle.italic),
+                  ),
+                  
+                  const SizedBox(height: 15),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.blue.shade100),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.info_outline, size: 14, color: Colors.blue),
+                            SizedBox(width: 6),
+                            Text("Informasi Refund", 
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blue)),
+                          ],
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          "Untuk proses pengembalian dana, silakan hubungi Admin melalui nomor WhatsApp berikut:",
+                          style: TextStyle(fontSize: 10, color: Colors.black87),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          "088123456789",
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
 
@@ -127,25 +142,18 @@ class _RiwayatPageState extends State<RiwayatPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 1,
-            child: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          ),
+          Expanded(flex: 1, child: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey))),
           const SizedBox(width: 10),
           Expanded(
-            flex: 1,
-            child: Text(
-              value, 
-              textAlign: TextAlign.right, 
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-              softWrap: true, 
-            ),
+            flex: 1, 
+            child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold), softWrap: true)
           ),
         ],
       ),
     );
   }
 
+  // --- FILTER & DELETE LOGIC (Tetap sama seperti kode awal Anda) ---
   void _showFilterDialog() {
     showDialog(
       context: context,
@@ -154,10 +162,8 @@ class _RiwayatPageState extends State<RiwayatPage> {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: Colors.white,
-              surfaceTintColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              title: Text("Filter Riwayat Saya", 
-                style: TextStyle(color: primaryColor, fontSize: 16, fontWeight: FontWeight.bold)),
+              title: Text("Filter Riwayat Saya", style: TextStyle(color: primaryColor, fontSize: 16, fontWeight: FontWeight.bold)),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -176,24 +182,12 @@ class _RiwayatPageState extends State<RiwayatPage> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
-                    setDialogState(() {
-                      selectedWisma = ["Semua"];
-                      selectedKelas = ["Semua"];
-                      selectedStatus = ["Semua"];
-                    });
-                  }, 
+                  onPressed: () => setDialogState(() { selectedWisma = ["Semua"]; selectedKelas = ["Semua"]; selectedStatus = ["Semua"]; }), 
                   child: const Text("Reset", style: TextStyle(color: Colors.red))
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    setState(() {}); 
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor, 
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
-                  ),
+                  onPressed: () { setState(() {}); Navigator.pop(context); },
+                  style: ElevatedButton.styleFrom(backgroundColor: primaryColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
                   child: const Text("Terapkan", style: TextStyle(color: Colors.white)),
                 )
               ],
@@ -223,23 +217,16 @@ class _RiwayatPageState extends State<RiwayatPage> {
         batch.delete(FirebaseFirestore.instance.collection('bookings').doc(id));
       }
       await batch.commit();
-      setState(() {
-        isSelectionMode = false;
-        selectedBookingIds.clear();
-      });
+      setState(() { isSelectionMode = false; selectedBookingIds.clear(); });
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Berhasil menghapus riwayat")));
     }
   }
 
-  Widget _buildFilterLabel(String label) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-  );
+  Widget _buildFilterLabel(String label) => Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)));
 
   Widget _buildChips(List<String> options, List<String> selectedList, StateSetter setDialogState) {
     return Wrap(
       spacing: 6,
-      runSpacing: 0,
       children: options.map((opt) {
         final isSel = selectedList.contains(opt);
         return FilterChip(
@@ -247,22 +234,14 @@ class _RiwayatPageState extends State<RiwayatPage> {
           selected: isSel,
           selectedColor: primaryColor,
           checkmarkColor: Colors.white,
-          onSelected: (v) {
-            setDialogState(() {
-              if (opt == "Semua") {
-                selectedList.clear();
-                selectedList.add("Semua");
-              } else {
-                selectedList.remove("Semua");
-                if (v) {
-                  selectedList.add(opt);
-                } else {
-                  selectedList.remove(opt);
-                }
-                if (selectedList.isEmpty) selectedList.add("Semua");
-              }
-            });
-          },
+          onSelected: (v) => setDialogState(() {
+            if (opt == "Semua") { selectedList.clear(); selectedList.add("Semua"); }
+            else {
+              selectedList.remove("Semua");
+              v ? selectedList.add(opt) : selectedList.remove(opt);
+              if (selectedList.isEmpty) selectedList.add("Semua");
+            }
+          }),
         );
       }).toList(),
     );
@@ -298,11 +277,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
     );
   }
 
-  Widget _buildHeader() => SizedBox(
-    width: double.infinity, 
-    height: 120, 
-    child: SvgPicture.asset('lib/assets/images/header_riwayat.svg', fit: BoxFit.cover)
-  );
+  Widget _buildHeader() => SizedBox(width: double.infinity, height: 120, child: SvgPicture.asset('lib/assets/images/header_riwayat.svg', fit: BoxFit.cover));
 
   Widget _buildTitleRow() {
     return Padding(
@@ -314,23 +289,11 @@ class _RiwayatPageState extends State<RiwayatPage> {
           Row(
             children: [
               GestureDetector(
-                onTap: () {
-                  setState(() {
-                    isSelectionMode = !isSelectionMode;
-                    selectedBookingIds.clear();
-                  });
-                },
+                onTap: () => setState(() { isSelectionMode = !isSelectionMode; selectedBookingIds.clear(); }),
                 child: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isSelectionMode ? Colors.red.withValues(alpha: 0.1) : primaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    isSelectionMode ? Icons.close : Icons.delete_outline,
-                    color: isSelectionMode ? Colors.red : primaryColor,
-                    size: 20,
-                  ),
+                  decoration: BoxDecoration(color: isSelectionMode ? Colors.red.withValues(alpha: 0.1) : primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                  child: Icon(isSelectionMode ? Icons.close : Icons.delete_outline, color: isSelectionMode ? Colors.red : primaryColor, size: 20),
                 ),
               ),
               const SizedBox(width: 10),
@@ -351,60 +314,25 @@ class _RiwayatPageState extends State<RiwayatPage> {
 
   Widget _buildHistoryList() {
     final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
-
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('bookings')
-          .where('userId', isEqualTo: currentUserId)
-          .snapshots(),
+      stream: FirebaseFirestore.instance.collection('bookings').where('userId', isEqualTo: currentUserId).snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-
         final listKeywordsKelas = ["Kelas A", "Kelas B", "Kelas Lab B", "Aula", "Kelas Toddopuli"];
-
-        var bookings = snapshot.data!.docs.map((doc) => 
-          BookingModel.fromMap(doc.id, doc.data() as Map<String, dynamic>)
-        ).toList();
+        var bookings = snapshot.data!.docs.map((doc) => BookingModel.fromMap(doc.id, doc.data() as Map<String, dynamic>)).toList();
 
         bookings = bookings.where((item) {
           String name = item.itemName;
           String status = item.status.name;
-
-          bool matchesWisma = false;
-          if (selectedWisma.contains("Semua")) {
-            matchesWisma = !listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
-          } else {
-            matchesWisma = selectedWisma.any((w) => name.toLowerCase().contains(w.toLowerCase()));
-          }
-
-          bool matchesKelas = false;
-          if (selectedKelas.contains("Semua")) {
-            matchesKelas = listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
-          } else {
-            matchesKelas = selectedKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
-          }
-
-          bool statusMatch = false;
-          if (selectedStatus.contains("Semua")) {
-            statusMatch = true;
-          } else {
-            if (selectedStatus.contains("Menunggu Persetujuan") && status == 'pending') statusMatch = true;
-            if (selectedStatus.contains("Diterima") && status == 'approved') statusMatch = true;
-            if (selectedStatus.contains("Ditolak") && status == 'rejected') statusMatch = true;
-          }
-
+          bool matchesWisma = selectedWisma.contains("Semua") ? !listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase())) : selectedWisma.any((w) => name.toLowerCase().contains(w.toLowerCase()));
+          bool matchesKelas = selectedKelas.contains("Semua") ? listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase())) : selectedKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
+          bool statusMatch = selectedStatus.contains("Semua") || (selectedStatus.contains("Menunggu Persetujuan") && status == 'pending') || (selectedStatus.contains("Diterima") && status == 'approved') || (selectedStatus.contains("Ditolak") && status == 'rejected');
           return (matchesWisma || matchesKelas) && statusMatch;
         }).toList();
 
         bookings.sort((a, b) => b.start.compareTo(a.start));
-
         if (bookings.isEmpty) return const Center(child: Text("Tidak ada data riwayat"));
-
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          itemCount: bookings.length,
-          itemBuilder: (context, index) => _buildBookingCard(bookings[index]),
-        );
+        return ListView.builder(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), itemCount: bookings.length, itemBuilder: (context, index) => _buildBookingCard(bookings[index]));
       },
     );
   }
@@ -414,60 +342,31 @@ class _RiwayatPageState extends State<RiwayatPage> {
     Color statusColor = Colors.orange;
     Color bgColor = const Color(0xFFFFF3E0);
 
-    if (booking.status == BookingStatus.approved) {
-      statusLabel = "Disetujui";
-      statusColor = primaryColor;
-      bgColor = const Color(0xFFE0F2F3);
-    } else if (booking.status == BookingStatus.rejected) {
-      statusLabel = "Ditolak";
-      statusColor = Colors.red;
-      bgColor = const Color(0xFFFFEBEE);
-    }
+    if (booking.status == BookingStatus.approved) { statusLabel = "Disetujui"; statusColor = primaryColor; bgColor = const Color(0xFFE0F2F3); }
+    else if (booking.status == BookingStatus.rejected) { statusLabel = "Ditolak"; statusColor = Colors.red; bgColor = const Color(0xFFFFEBEE); }
 
     bool isSelected = selectedBookingIds.contains(booking.id);
-    bool canBeDeleted = booking.status == BookingStatus.approved || 
-                        booking.status == BookingStatus.rejected;
+    bool canBeDeleted = booking.status == BookingStatus.approved || booking.status == BookingStatus.rejected;
 
     return GestureDetector(
       onTap: isSelectionMode ? () {
         if (canBeDeleted) {
-          setState(() {
-            if (isSelected) {
-              selectedBookingIds.remove(booking.id);
-            } else {
-              selectedBookingIds.add(booking.id);
-            }
-          });
+          setState(() { isSelected ? selectedBookingIds.remove(booking.id) : selectedBookingIds.add(booking.id); });
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Pesanan yang masih menunggu tidak dapat dihapus"), duration: Duration(seconds: 1)),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pesanan yang masih menunggu tidak dapat dihapus"), duration: Duration(seconds: 1)));
         }
       } : null,
-
       child: Container(
         margin: const EdgeInsets.only(bottom: 15),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(
-            color: isSelected ? Colors.red : const Color(0xFFF0F4F4),
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
-          ],
+          color: Colors.white, borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: isSelected ? Colors.red : const Color(0xFFF0F4F4), width: isSelected ? 2 : 1),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
         ),
         child: Row(
           children: [
-            if (isSelectionMode) ...[
-              Icon(
-                isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                color: isSelected ? Colors.red : Colors.grey,
-              ),
-              const SizedBox(width: 12),
-            ],
+            if (isSelectionMode) ...[Icon(isSelected ? Icons.check_box : Icons.check_box_outline_blank, color: isSelected ? Colors.red : Colors.grey), const SizedBox(width: 12)],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -475,52 +374,23 @@ class _RiwayatPageState extends State<RiwayatPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: Text(
-                          booking.itemName,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Text(DateFormat('dd MMM yyyy').format(booking.start), 
-                        style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                      Expanded(child: Text(booking.itemName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis)),
+                      Text(DateFormat('dd MMM yyyy').format(booking.start), style: const TextStyle(color: Colors.grey, fontSize: 10)),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text("ID Pesanan: ${booking.id.split('_').first.toUpperCase()}", 
-                    style: TextStyle(color: primaryColor, fontSize: 11, fontWeight: FontWeight.bold)),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Divider(height: 1, color: Color(0xFFF0F4F4)),
-                  ),
+                  Text("ID Pesanan: ${booking.id.split('_').first.toUpperCase()}", style: TextStyle(color: primaryColor, fontSize: 11, fontWeight: FontWeight.bold)),
+                  const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1, color: Color(0xFFF0F4F4))),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.calendar_today_outlined, size: 14, color: primaryColor),
-                          const SizedBox(width: 6),
-                          Text("${DateFormat('dd MMM').format(booking.start)} - ${DateFormat('dd MMM').format(booking.end)}", 
-                            style: const TextStyle(fontSize: 11, color: Colors.black87)),
-                        ],
-                      ),
+                      Row(children: [Icon(Icons.calendar_today_outlined, size: 14, color: primaryColor), const SizedBox(width: 6), Text("${DateFormat('dd MMM').format(booking.start)} - ${DateFormat('dd MMM').format(booking.end)}", style: const TextStyle(fontSize: 11, color: Colors.black87))]),
                       GestureDetector(
                         onTap: () => _showDetailDialog(booking),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), 
-                          decoration: BoxDecoration(
-                            color: bgColor,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: statusColor.withValues(alpha: 0.3))
-                          ),
-                          child: Text(
-                            statusLabel, 
-                            style: TextStyle(
-                              color: statusColor, 
-                              fontSize: 11, 
-                              fontWeight: FontWeight.bold
-                            )
-                          ),
+                          decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(8), border: Border.all(color: statusColor.withValues(alpha: 0.3))),
+                          child: Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],

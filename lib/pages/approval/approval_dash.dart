@@ -158,25 +158,17 @@ class _DashApprovalState extends State<DashApproval> {
   }
 
   Widget _buildWelcomeSection(BuildContext context) {
-    return Row(
+    return const Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text("Selamat Datang,", style: TextStyle(fontSize: 14, color: Colors.black54)),
             Text("PLN UDPL Makassar", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryTeal)),
           ],
         ),
-        IconButton(
-          onPressed: () => Navigator.pushNamed(context, '/notif_approval'),
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)]),
-            child: const Icon(Icons.notifications_none, color: primaryTeal),
-          ),
-        )
+        // Icon notification telah dihapus sesuai instruksi
       ],
     );
   }

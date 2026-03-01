@@ -20,57 +20,53 @@ class WelcomePage extends StatelessWidget {
         child: Stack(
           children: [
             // --- BAGIAN ATAS: HEADER & GAMBAR ---
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Teks
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        "Halo!",
-                        style: TextStyle(
-                          fontSize: 28, // Ukuran sedikit diperbesar agar lebih tegas
-                          fontWeight: FontWeight.bold,
-                          color: primaryTeal,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        "Selamat datang di PLN UPDL Makassar",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    "Halo!",
+                    style: TextStyle(
+                      fontSize: 22, 
+                      fontWeight: FontWeight.bold,
+                      color: primaryTeal,
+                    ),
                   ),
-                ),
-                
-                // Gambar Ilustrasi
-                // Menggunakan Container agar bisa mengontrol BoxFit dengan lebih presisi
-                SizedBox(
-                  width: size.width,
-                  height: size.height * 0.38, 
-                  child: SvgPicture.asset(
-                    "lib/assets/images/welcome_pluskotak.svg",
-                    width: size.width,
-                    // BoxFit.contain mencegah gambar terpotong di layar HP yang pendek
-                    fit: BoxFit.contain, 
+                  SizedBox(height: 4),
+                  Text(
+                    "Selamat datang di PLN UPDL Makassar",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            
+            // Gambar Ilustrasi dibuat Full Width
+            SizedBox(
+              width: size.width, 
+              height: size.height * 0.45, 
+              child: SvgPicture.asset(
+                "lib/assets/images/welcome_pluskotak.svg",
+                width: size.width,
+                fit: BoxFit.fitWidth, 
+              ),
+            ),
+          ],
+        ),
 
             // --- BAGIAN BAWAH: BOTTOM SHEET (BOX PUTIH) ---
             Align(
               alignment: Alignment.bottomCenter,
               child: Container(
                 width: double.infinity,
-                // Ukuran box disesuaikan agar proporsional di berbagai ukuran layar
                 height: size.height * 0.35, 
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 decoration: BoxDecoration(
@@ -126,7 +122,6 @@ class WelcomePage extends StatelessWidget {
                       }, 
                       isOutlined: true,
                     ),
-                    // Memberikan jarak aman di bawah (terutama untuk iPhone tanpa tombol home)
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -138,7 +133,6 @@ class WelcomePage extends StatelessWidget {
     );
   }
 
-  // Refactor widget tombol agar kode lebih bersih dan mudah dikelola
   Widget _buildButton({
     required BuildContext context,
     required String text, 
@@ -149,13 +143,12 @@ class WelcomePage extends StatelessWidget {
   }) {
     return SizedBox(
       width: double.infinity,
-      height: 56, // Standar tinggi tombol aksesibilitas
+      height: 56,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: bgColor,
           foregroundColor: textColor,
           elevation: isOutlined ? 0 : 2,
-          // Menambahkan border jika tombol bersifat Outlined
           side: isOutlined ? BorderSide(color: textColor, width: 1.5) : BorderSide.none,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

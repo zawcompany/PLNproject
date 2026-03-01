@@ -3,6 +3,16 @@ import '../models/room_model.dart';
 
 class LocalData {
   static List<ItemModel> items = [
+    ItemModel.seed(
+      title: "Wisma Anggrek",
+      imagePath: "lib/assets/images/anggrek.jpeg",
+      type: ItemType.wisma,
+      description: "Wisma ini bertipe 70 dengan fasilitas lengkap.",
+      rooms: [
+        RoomModel.seed(name: "Anggrek 1.1", capacity: 4, condition: RoomCondition.terisi),
+        RoomModel.seed(name: "Anggrek 1.2", capacity: 4, condition: RoomCondition.terisi),
+      ],
+    ),
 
     ItemModel.seed(
       title: "Wisma Bougenville",
@@ -52,7 +62,7 @@ class LocalData {
 
     ItemModel.seed(
       title: "Wisma Dahlia",
-      imagePath: "lib/assets/images/dahlia.png",
+      imagePath: "lib/assets/images/dahlia.jpeg",
       type: ItemType.wisma,
       description: "Wisma ini bertipe 70 dengan fasilitas lengkap.",
       rooms: [
@@ -71,8 +81,8 @@ class LocalData {
     ),
 
     ItemModel.seed(
-      title: "Wisma Edelweys",
-      imagePath: "lib/assets/images/edelweis.png",
+      title: "Wisma Edelweiss",
+      imagePath: "lib/assets/images/edelweiss.png",
       type: ItemType.wisma,
       description: "Wisma ini bertipe 70 dengan fasilitas lengkap.",
       rooms: [
@@ -184,7 +194,7 @@ class LocalData {
 
     ItemModel.seed(
       title: "Kelas A",
-      imagePath: "lib/assets/images/kelasA.png",
+      imagePath: "lib/assets/images/kelasA.jpeg",
       type: ItemType.kelas,
       description: "Kelas ini memiliki kapasitas 24 orang dan fasilitas beanbag.",
       rooms: [
@@ -201,7 +211,7 @@ class LocalData {
 
     ItemModel.seed(
       title: "Kelas B",
-      imagePath: "lib/assets/images/kelasB.png",
+      imagePath: "lib/assets/images/kelasB.jpeg",
       type: ItemType.kelas,
       description: "Kelas ini memiliki kapasitas 24 orang dan fasilitas beanbag.",
       rooms: [
@@ -215,8 +225,8 @@ class LocalData {
     ),
 
     ItemModel.seed(
-      title: "Kelas Lab B",
-      imagePath: "lib/assets/images/kelas_lab_b.png",
+      title: "Lab B",
+      imagePath: "lib/assets/images/lab.jpeg",
       type: ItemType.kelas,
       description: "Kelas ini memiliki kapasitas 24 orang dan fasilitas beanbag.",
       rooms: [
@@ -236,13 +246,12 @@ class LocalData {
 
     ItemModel.seed(
       title: "Kelas Toddopuli",
-      imagePath: "lib/assets/images/kelas_toddopuli.png",
+      imagePath: "lib/assets/images/kelasB.jpeg",
       type: ItemType.kelas,
       description: "Kelas ini memiliki kapasitas 24 orang dan fasilitas beanbag.",
       rooms: [
         RoomModel.seed(name: "Kelas Toddopuli", capacity: 24, condition: RoomCondition.kosong),
       ],
     ),
-
   ];
 }

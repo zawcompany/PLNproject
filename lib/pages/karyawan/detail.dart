@@ -244,7 +244,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
       child: Stack(
         children: [
           Positioned.fill(child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(0)),
             child: item.imagePath.startsWith('http') ? Image.network(item.imagePath, fit: BoxFit.cover) : Image.asset(item.imagePath, fit: BoxFit.cover),
           )),
           Positioned(top: 50, left: 10, child: IconButton(

@@ -1,4 +1,4 @@
-enum BookingStatus { pending, approved, rejected, refundProcess, completed }
+enum BookingStatus { pending, approved, rejected, waitingRefund, refunded }
 
 class BookingModel {
   final String id;
@@ -10,6 +10,7 @@ class BookingModel {
   final DateTime end;
   final double totalPayment;
   final String? paymentProof;
+  final String? suratPendukung;
   BookingStatus status;
   final String? accountNumber;
   final String? rejectReason;
@@ -33,6 +34,7 @@ class BookingModel {
     required this.end,
     required this.totalPayment,
     this.paymentProof,
+    this.suratPendukung,
     this.status = BookingStatus.pending,
     this.accountNumber,
     this.rejectReason,
@@ -58,6 +60,7 @@ class BookingModel {
       'end': end.toIso8601String(),
       'totalPayment': totalPayment,
       'paymentProof': paymentProof,
+      'suratPendukung': suratPendukung,
       'status': status.name,
       'accountNumber': accountNumber,
       'rejectReason': rejectReason,
@@ -84,6 +87,7 @@ class BookingModel {
       end: DateTime.parse(map['end']),
       totalPayment: (map['totalPayment'] ?? 0).toDouble(),
       paymentProof: map['paymentProof'],
+      suratPendukung: map['suratPendukung'],
       status: BookingStatus.values.firstWhere(
         (e) => e.name == map['status'],
         orElse: () => BookingStatus.pending,

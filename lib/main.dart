@@ -10,8 +10,6 @@ import 'pages/karyawan/staff_riwayat.dart';
 import 'pages/approval/approval_dash.dart';
 import 'pages/approval/riwayat_approval.dart';
 import 'pages/karyawan/staff_dash.dart';
-import 'pages/approval/approval_notif.dart';
-import 'pages/karyawan/staff_notif.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,8 +56,6 @@ class MyApp extends StatelessWidget {
         '/riwayat_approval': (context) => const RiwayatApprovalPage(), 
         '/profil': (context) => const ProfileScreen(),
         '/staff_dash': (context) => const DashboardAlternative(),
-        '/notif_approval': (context) => const NotificationApprovalPage(),
-        '/notif_staff': (context) => const NotificationStaffPage(),
       },
     );
   }
