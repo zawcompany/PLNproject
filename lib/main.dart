@@ -10,6 +10,9 @@ import 'pages/karyawan/staff_riwayat.dart';
 import 'pages/approval/approval_dash.dart';
 import 'pages/approval/riwayat_approval.dart';
 import 'pages/karyawan/staff_dash.dart';
+import 'pages/karyawan/wisma_eks_general.dart';
+import 'pages/karyawan/wisma_int_general.dart';
+import 'pages/karyawan/kelas_general.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,6 +59,9 @@ class MyApp extends StatelessWidget {
         '/riwayat_approval': (context) => const RiwayatApprovalPage(), 
         '/profil': (context) => const ProfileScreen(),
         '/staff_dash': (context) => const DashboardAlternative(),
+        '/kelas_general': (context) => const FormKelasGeneral(),
+        '/wisma_int_general': (context) => const FormWismaGeneralInternal(), 
+        '/wisma_eks_general': (context) => const FormWismaGeneralEksternal(),
       },
     );
   }

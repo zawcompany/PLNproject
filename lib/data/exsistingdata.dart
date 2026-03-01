@@ -62,7 +62,7 @@ class LocalData {
 
     ItemModel.seed(
       title: "Wisma Dahlia",
-      imagePath: "lib/assets/images/dahlia.jpeg",
+      imagePath: "lib/assets/images/dahlia.png",
       type: ItemType.wisma,
       description: "Wisma ini bertipe 70 dengan fasilitas lengkap.",
       rooms: [
@@ -194,7 +194,7 @@ class LocalData {
 
     ItemModel.seed(
       title: "Kelas A",
-      imagePath: "lib/assets/images/kelasA.jpeg",
+      imagePath: "lib/assets/images/kelasA.png",
       type: ItemType.kelas,
       description: "Kelas ini memiliki kapasitas 24 orang dan fasilitas beanbag.",
       rooms: [
@@ -211,7 +211,7 @@ class LocalData {
 
     ItemModel.seed(
       title: "Kelas B",
-      imagePath: "lib/assets/images/kelasB.jpeg",
+      imagePath: "lib/assets/images/kelasB.png",
       type: ItemType.kelas,
       description: "Kelas ini memiliki kapasitas 24 orang dan fasilitas beanbag.",
       rooms: [
@@ -246,7 +246,7 @@ class LocalData {
 
     ItemModel.seed(
       title: "Kelas Toddopuli",
-      imagePath: "lib/assets/images/kelasB.jpeg",
+      imagePath: "lib/assets/images/kelasB.png",
       type: ItemType.kelas,
       description: "Kelas ini memiliki kapasitas 24 orang dan fasilitas beanbag.",
       rooms: [
