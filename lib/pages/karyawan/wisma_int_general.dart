@@ -188,7 +188,7 @@ class _FormWismaGeneralInternalState extends State<FormWismaGeneralInternal> {
                   children: [
                     const Text("Pilih Wisma Manual", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                     const SizedBox(height: 4),
-                    const Text("Sesuaikan pilihan kamar wisma internal", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const Text("Sesuaikan pilihan kamar wisma.", style: TextStyle(fontSize: 12, color: Colors.grey)),
                     const Divider(height: 32),
                     Expanded(
                       child: SingleChildScrollView(
@@ -587,7 +587,7 @@ class _FormWismaGeneralInternalState extends State<FormWismaGeneralInternal> {
               const SizedBox(height: 24),
               const Text("Pesanan Berhasil!", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
-              const Text("Pesanan internal Anda telah masuk ke sistem.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+              const Text("Pesanan Anda telah masuk ke sistem.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,

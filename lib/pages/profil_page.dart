@@ -44,6 +44,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             name = data?['name'] ?? name;
             email = data?['email'] ?? email;
             role = (data?['role'] ?? "").toString().toLowerCase().trim();
+            photoUrl = data?['photoUrl']; // Ambil photoUrl dari Firestore
           });
         }
       } catch (e) {
@@ -79,118 +80,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         role == 'approval' ? '/riwayat_approval' : '/riwayat_staff' 
       );
     }
-  }
-
-  void _showEditContactDialog() {
-    final TextEditingController contactController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
-    bool isObscure = true;
-
-    // Ambil nomor lama
-    FirebaseFirestore.instance.collection('settings').doc('contact').get().then((doc) {
-      if (doc.exists && mounted) {
-        contactController.text = doc.data()?['whatsapp'] ?? "";
-      }
-    });
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text("Edit Kontak Refund", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text("Masukkan password Anda untuk mengubah.", 
-                style: TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 20),
-              
-              // Field Nomor WhatsApp
-              TextField(
-                controller: contactController,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  labelText: "Nomor WhatsApp Baru",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.phone),
-                ),
-              ),
-              const SizedBox(height: 15),
-
-              // Field Verifikasi Password
-              TextField(
-                controller: passwordController,
-                obscureText: isObscure,
-                decoration: InputDecoration(
-                  labelText: "Konfirmasi Password Admin",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(isObscure ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setDialogState(() => isObscure = !isObscure),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
-              onPressed: () async {
-                if (contactController.text.isEmpty || passwordController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Semua field wajib diisi")));
-                  return;
-                }
-
-                final nav = Navigator.of(context);
-                final sm = ScaffoldMessenger.of(context);
-
-                try {
-                  // Tampilkan loading
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) => const Center(child: CircularProgressIndicator()),
-                  );
-
-                  // LOGIKA KEAMANAN: Re-autentikasi sebelum simpan
-                  final user = FirebaseAuth.instance.currentUser;
-                  AuthCredential credential = EmailAuthProvider.credential(
-                    email: user!.email!,
-                    password: passwordController.text.trim(),
-                  );
-
-                  await user.reauthenticateWithCredential(credential);
-
-                  // Jika password benar, baru simpan ke Firestore
-                  await FirebaseFirestore.instance
-                      .collection('settings')
-                      .doc('contact')
-                      .set({'whatsapp': contactController.text.trim()});
-                  
-                  nav.pop(); // Tutup loading
-                  nav.pop(); // Tutup dialog input
-                  
-                  sm.showSnackBar(const SnackBar(
-                    content: Text("Kontak refund berhasil diperbarui"),
-                    backgroundColor: Colors.green,
-                  ));
-                } catch (e) {
-                  nav.pop(); // Tutup loading
-                  String errorMsg = "Password salah atau terjadi kesalahan";
-                  if (e.toString().contains("wrong-password")) errorMsg = "Password yang Anda masukkan salah!";
-                  
-                  sm.showSnackBar(SnackBar(content: Text(errorMsg), backgroundColor: Colors.red));
-                }
-              },
-              child: const Text("Simpan", style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -237,7 +126,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               border: Border.all(color: Colors.white, width: 4),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Colors.black.withOpacity(0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
@@ -246,8 +135,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: CircleAvatar(
               radius: 50, 
               backgroundColor: const Color(0xFFE0E6E6),
-              backgroundImage: photoUrl != null ? NetworkImage(photoUrl!) : null,
-              child: photoUrl == null 
+              backgroundImage: (photoUrl != null && photoUrl!.isNotEmpty) 
+                  ? NetworkImage(photoUrl!) 
+                  : null,
+              child: (photoUrl == null || photoUrl!.isEmpty) 
                   ? const Icon(Icons.person, size: 65, color: Colors.white) 
                   : null,
             ),
@@ -288,8 +179,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
         }),
         
-        if (role == 'approval')
-          _menuItem(Icons.contact_support_outlined, "Edit Informasi Refund", onTap: _showEditContactDialog),
+        // Bagian Edit Informasi Refund sudah dihapus
 
         _menuItem(Icons.play_circle_outline, "Tutorial Penggunaan Aplikasi", onTap: _launchTutorial),
         const Padding(

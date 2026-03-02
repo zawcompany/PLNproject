@@ -25,7 +25,7 @@ class FormWismaEksternalPage extends StatefulWidget {
 
 class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
   final _formKey = GlobalKey<FormState>();
-  final DatabaseService _db = DatabaseService(); // Inisialisasi Service
+  final DatabaseService _db = DatabaseService(); 
 
   static const Color softTeal = Color(0xFFE8F1F3);
   static const Color primaryTeal = Color(0xFF008996);
@@ -144,7 +144,7 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  "Permohonan reservasi eksternal Anda telah berhasil dikirim ke sistem. Silakan tunggu konfirmasi selanjutnya.",
+                  "Permohonan reservasi Anda telah berhasil dikirim ke sistem. Silakan tunggu konfirmasi selanjutnya.",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.5),
                 ),
@@ -443,3 +443,5 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
     if (picked != null) setState(() => buktiPembayaran = File(picked.path));
   }
 }
+
+

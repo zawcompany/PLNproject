@@ -80,7 +80,6 @@ class _DashApprovalState extends State<DashApproval> {
     );
   }
 
-  // FUNGSI DIALOG KEDUA: Pilih Internal atau Eksternal untuk Wisma dengan Style Baru
   void _showWismaTypeDialog() {
     showDialog(
       context: context,
@@ -102,7 +101,7 @@ class _DashApprovalState extends State<DashApproval> {
               const SizedBox(height: 24),
               _buildDialogOption(
                 icon: Icons.badge_rounded,
-                label: "Internal (Karyawan/NIP)",
+                label: "Siswa Pembelajaran",
                 color: const Color(0xFFF3E5F5),
                 onTap: () {
                   Navigator.pop(context);
@@ -112,7 +111,7 @@ class _DashApprovalState extends State<DashApproval> {
               const SizedBox(height: 12),
               _buildDialogOption(
                 icon: Icons.public_rounded,
-                label: "Eksternal (Umum/NIK)",
+                label: "Beyond KwH",
                 color: const Color(0xFFFFF3E0),
                 onTap: () {
                   Navigator.pop(context);

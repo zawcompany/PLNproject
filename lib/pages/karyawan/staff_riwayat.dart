@@ -23,11 +23,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
   bool isSelectionMode = false;
   List<String> selectedBookingIds = [];
 
-  @override
-  void initState() {
-    super.initState();
-  }
-
   // --- 1. FUNGSI PEMBANTU UNTUK BARIS DETAIL ---
   Widget _buildDetailRow(String label, String value) {
     return Padding(
@@ -40,41 +35,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
           Expanded(
             flex: 1, 
             child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold), softWrap: true)
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- 2. FUNGSI PEMBANTU INFO REFUND ---
-  Widget _buildRefundInfo() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.blue.shade100),
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.info_outline, size: 14, color: Colors.blue),
-              SizedBox(width: 6),
-              Text("Informasi Refund", 
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blue)),
-            ],
-          ),
-          SizedBox(height: 6),
-          Text(
-            "Untuk proses pengembalian dana, silakan hubungi Admin melalui nomor WhatsApp berikut:",
-            style: TextStyle(fontSize: 10, color: Colors.black87),
-          ),
-          SizedBox(height: 4),
-          Text(
-            "088123456789",
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black),
           ),
         ],
       ),
@@ -97,7 +57,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
     );
   }
 
-  // --- DIALOG DETAIL RESERVASI ---
   void _showDetailDialog(BookingModel booking) {
     showDialog(
       context: context,
@@ -119,15 +78,11 @@ class _RiwayatPageState extends State<RiwayatPage> {
                   ],
                 ),
                 const Divider(height: 30),
-                
                 _buildDetailRow("Nama Pemesan", booking.userName),
                 _buildDetailRow("NIK", booking.nik ?? "-"),
                 if (booking.nip != null && booking.nip!.isNotEmpty) _buildDetailRow("NIP", booking.nip!),
                 if (booking.address != null && booking.address!.isNotEmpty) _buildDetailRow("Alamat", booking.address!),
-                
-                // MENAMPILKAN DETAIL (Misal: Wisma Gladiol 103)
                 _buildDetailRow("Kamar/Kelas", "${booking.itemName} ${booking.roomIds.join(', ')}"),
-                
                 _buildDetailRow("Periode", "${DateFormat('dd MMM yyyy').format(booking.start)} - ${DateFormat('dd MMM yyyy').format(booking.end)}"),
                 
                 if (booking.userType == 'eksternal') ...[
@@ -137,6 +92,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                   _buildDetailRow("Jumlah Tamu", "${booking.guestCount ?? 0}"),
                 ],
 
+                // Bagian Alasan Penolakan tetap ada, tapi Info Refund di bawahnya dihapus
                 if (booking.status == BookingStatus.rejected) ...[
                   const SizedBox(height: 16),
                   const Divider(),
@@ -150,10 +106,9 @@ class _RiwayatPageState extends State<RiwayatPage> {
                         : booking.rejectReason!, 
                     style: const TextStyle(fontSize: 12, color: Colors.black87, fontStyle: FontStyle.italic),
                   ),
-                  const SizedBox(height: 15),
-                  _buildRefundInfo(), 
+                  // _buildRefundInfo() DI SINI SUDAH DIHAPUS
                 ],
-
+                
                 const SizedBox(height: 32),
                 _buildCloseButton(),
               ],
@@ -172,6 +127,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: Colors.white,
+              surfaceTintColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               title: Text("Filter Riwayat Saya", style: TextStyle(color: primaryColor, fontSize: 16, fontWeight: FontWeight.bold)),
               content: SingleChildScrollView(
@@ -237,6 +193,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
   Widget _buildChips(List<String> options, List<String> selectedList, StateSetter setDialogState) {
     return Wrap(
       spacing: 6,
+      runSpacing: 0,
       children: options.map((opt) {
         final isSel = selectedList.contains(opt);
         return FilterChip(
@@ -244,14 +201,25 @@ class _RiwayatPageState extends State<RiwayatPage> {
           selected: isSel,
           selectedColor: primaryColor,
           checkmarkColor: Colors.white,
-          onSelected: (v) => setDialogState(() {
-            if (opt == "Semua") { selectedList.clear(); selectedList.add("Semua"); }
-            else {
-              selectedList.remove("Semua");
-              v ? selectedList.add(opt) : selectedList.remove(opt);
-              if (selectedList.isEmpty) selectedList.add("Semua");
-            }
-          }),
+          onSelected: (v) {
+            setDialogState(() {
+              if (opt == "Semua") {
+                if (v) {
+                  selectedList.clear();
+                  selectedList.add("Semua");
+                } else {
+                  selectedList.remove("Semua");
+                }
+              } else {
+                selectedList.remove("Semua");
+                if (v) {
+                  selectedList.add(opt);
+                } else {
+                  selectedList.remove(opt);
+                }
+              }
+            });
+          },
         );
       }).toList(),
     );
@@ -328,21 +296,56 @@ class _RiwayatPageState extends State<RiwayatPage> {
       stream: FirebaseFirestore.instance.collection('bookings').where('userId', isEqualTo: currentUserId).snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        
         final listKeywordsKelas = ["Kelas A", "Kelas B", "Lab B", "Aula", "Kelas Toddopuli"];
         var bookings = snapshot.data!.docs.map((doc) => BookingModel.fromMap(doc.id, doc.data() as Map<String, dynamic>)).toList();
 
         bookings = bookings.where((item) {
           String name = item.itemName;
           String status = item.status.name;
-          bool matchesWisma = selectedWisma.contains("Semua") ? !listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase())) : selectedWisma.any((w) => name.toLowerCase().contains(w.toLowerCase()));
-          bool matchesKelas = selectedKelas.contains("Semua") ? listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase())) : selectedKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
-          bool statusMatch = selectedStatus.contains("Semua") || (selectedStatus.contains("Menunggu Persetujuan") && status == 'pending') || (selectedStatus.contains("Diterima") && status == 'approved') || (selectedStatus.contains("Ditolak") && status == 'rejected');
-          return (matchesWisma || matchesKelas) && statusMatch;
+
+          // 1. Logika Filter Wisma
+          bool matchesWisma = false;
+          if (selectedWisma.isEmpty) {
+            matchesWisma = false; 
+          } else if (selectedWisma.contains("Semua")) {
+            matchesWisma = !listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
+          } else {
+            matchesWisma = selectedWisma.any((w) => name.toLowerCase().contains(w.toLowerCase()));
+          }
+
+          // 2. Logika Filter Kelas
+          bool matchesKelas = false;
+          if (selectedKelas.isEmpty) {
+            matchesKelas = false;
+          } else if (selectedKelas.contains("Semua")) {
+            matchesKelas = listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
+          } else {
+            matchesKelas = selectedKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
+          }
+
+          bool categoryMatch = matchesWisma || matchesKelas;
+
+          // 3. Logika Filter Status
+          bool statusMatch = false;
+          if (selectedStatus.contains("Semua") || selectedStatus.isEmpty) {
+            statusMatch = true;
+          } else {
+            if (selectedStatus.contains("Menunggu Persetujuan") && status == 'pending') statusMatch = true;
+            if (selectedStatus.contains("Diterima") && status == 'approved') statusMatch = true;
+            if (selectedStatus.contains("Ditolak") && status == 'rejected') statusMatch = true;
+          }
+
+          return categoryMatch && statusMatch;
         }).toList();
 
         bookings.sort((a, b) => b.start.compareTo(a.start));
         if (bookings.isEmpty) return const Center(child: Text("Tidak ada data riwayat"));
-        return ListView.builder(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), itemCount: bookings.length, itemBuilder: (context, index) => _buildBookingCard(bookings[index]));
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), 
+          itemCount: bookings.length, 
+          itemBuilder: (context, index) => _buildBookingCard(bookings[index])
+        );
       },
     );
   }
@@ -352,8 +355,15 @@ class _RiwayatPageState extends State<RiwayatPage> {
     Color statusColor = Colors.orange;
     Color bgColor = const Color(0xFFFFF3E0);
 
-    if (booking.status == BookingStatus.approved) { statusLabel = "Disetujui"; statusColor = primaryColor; bgColor = const Color(0xFFE0F2F3); }
-    else if (booking.status == BookingStatus.rejected) { statusLabel = "Ditolak"; statusColor = Colors.red; bgColor = const Color(0xFFFFEBEE); }
+    if (booking.status == BookingStatus.approved) { 
+      statusLabel = "Disetujui"; 
+      statusColor = primaryColor; 
+      bgColor = const Color(0xFFE0F2F3); 
+    } else if (booking.status == BookingStatus.rejected) { 
+      statusLabel = "Ditolak"; 
+      statusColor = Colors.red; 
+      bgColor = const Color(0xFFFFEBEE); 
+    }
 
     bool isSelected = selectedBookingIds.contains(booking.id);
     bool canBeDeleted = booking.status == BookingStatus.approved || booking.status == BookingStatus.rejected;
@@ -370,7 +380,8 @@ class _RiwayatPageState extends State<RiwayatPage> {
         margin: const EdgeInsets.only(bottom: 15),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(15),
+          color: Colors.white, 
+          borderRadius: BorderRadius.circular(15),
           border: Border.all(color: isSelected ? Colors.red : const Color(0xFFF0F4F4), width: isSelected ? 2 : 1),
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
         ),

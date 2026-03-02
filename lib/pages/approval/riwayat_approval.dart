@@ -140,8 +140,12 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
           onSelected: (v) {
             setDialogState(() {
               if (opt == "Semua") {
-                selectedList.clear();
-                selectedList.add("Semua");
+                if (v) {
+                  selectedList.clear();
+                  selectedList.add("Semua");
+                } else {
+                  selectedList.remove("Semua"); 
+                }
               } else {
                 selectedList.remove("Semua");
                 if (v) {
@@ -227,41 +231,49 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
         final listKeywordsKelas = ["Kelas A", "Kelas B", "Lab B", "Aula", "Kelas Toddopuli"];
 
         allItems = allItems.where((item) {
-          String name = (item is BookingModel) ? item.itemName : (item as ComplaintModel).roomName;
-          String status = (item is BookingModel) ? item.status.name : (item as ComplaintModel).status.name;
+        String name = (item is BookingModel) ? item.itemName : (item as ComplaintModel).roomName;
+        String status = (item is BookingModel) ? item.status.name : (item as ComplaintModel).status.name;
 
-          bool matchesWisma = false;
-          if (selectedWisma.contains("Semua")) {
-            matchesWisma = !listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
+        //Logika Filter Wisma
+        bool matchesWisma = false;
+        if (selectedWisma.isEmpty) {
+          matchesWisma = false; 
+        } else if (selectedWisma.contains("Semua")) {
+          matchesWisma = !listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
+        } else {
+          matchesWisma = selectedWisma.any((w) => name.toLowerCase().contains(w.toLowerCase()));
+        }
+
+        //Logika Filter Kelas
+        bool matchesKelas = false;
+        if (selectedKelas.isEmpty) {
+          matchesKelas = false; 
+        } else if (selectedKelas.contains("Semua")) {
+          matchesKelas = listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
+        } else {
+          matchesKelas = selectedKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
+        }
+
+        bool categoryMatch = matchesWisma || matchesKelas;
+
+        // Logika Filter Status 
+        bool statusMatch = false;
+        if (selectedStatus.contains("Semua") || selectedStatus.isEmpty) {
+          statusMatch = true;
+        } else {
+          if (selectedRiwayatType == "Pemesanan") {
+            if (selectedStatus.contains("Menunggu Persetujuan") && status == 'pending') statusMatch = true;
+            if (selectedStatus.contains("Diterima") && status == 'approved') statusMatch = true;
+            if (selectedStatus.contains("Ditolak") && status == 'rejected') statusMatch = true;
           } else {
-            matchesWisma = selectedWisma.any((w) => name.toLowerCase().contains(w.toLowerCase()));
+            if (selectedStatus.contains("Perlu Perbaikan") && status == 'pending') statusMatch = true;
+            if (selectedStatus.contains("Dalam Perbaikan") && status == 'repairing') statusMatch = true;
+            if (selectedStatus.contains("Selesai") && status == 'resolved') statusMatch = true;
           }
+        }
 
-          bool matchesKelas = false;
-          if (selectedKelas.contains("Semua")) {
-            matchesKelas = listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
-          } else {
-            matchesKelas = selectedKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
-          }
-
-          bool categoryMatch = matchesWisma || matchesKelas;
-
-          bool statusMatch = false;
-          if (selectedStatus.contains("Semua") || selectedStatus.isEmpty) {
-            statusMatch = true;
-          } else {
-            if (selectedRiwayatType == "Pemesanan") {
-              if (selectedStatus.contains("Menunggu Persetujuan") && status == 'pending') statusMatch = true;
-              if (selectedStatus.contains("Diterima") && status == 'approved') statusMatch = true;
-              if (selectedStatus.contains("Ditolak") && status == 'rejected') statusMatch = true;
-            } else {
-              if (selectedStatus.contains("Perlu Perbaikan") && status == 'pending') statusMatch = true;
-              if (selectedStatus.contains("Dalam Perbaikan") && status == 'repairing') statusMatch = true;
-              if (selectedStatus.contains("Selesai") && status == 'resolved') statusMatch = true;
-            }
-          }
-          return categoryMatch && statusMatch;
-        }).toList();
+        return categoryMatch && statusMatch;
+      }).toList();
 
         allItems.sort((a, b) {
           int priorityA = getStatusPriority(a);

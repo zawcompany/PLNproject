@@ -66,8 +66,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    Navigator.pop(context); // Tutup dialog
-                    // Navigasi ke Form Internal
+                    Navigator.pop(context); 
                     Navigator.push(
                       context, 
                       MaterialPageRoute(
@@ -75,7 +74,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                       )
                     );
                   },
-                  child: const Text("Internal"),
+                  child: const Text("Siswa Pembelajaran"),
                 ),
               ),
               const SizedBox(width: 10),
@@ -83,8 +82,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context); // Tutup dialog
-                    // Navigasi ke Form Eksternal
+                    Navigator.pop(context);
                     Navigator.push(
                       context, 
                       MaterialPageRoute(
@@ -93,7 +91,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                     );
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008996)),
-                  child: const Text("Eksternal", style: TextStyle(color: Colors.white)),
+                  child: const Text("Beyond KwH", style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],
