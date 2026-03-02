@@ -343,7 +343,7 @@ class _FormKelasGeneralState extends State<FormKelasGeneral> {
           onTap: () { if (controller.text == '0') controller.clear(); },
           validator: (value) => (isOptional || (value != null && value.trim().isNotEmpty)) ? null : "Wajib diisi",
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, size: 18, color: Colors.white),
+            prefixIcon: Icon(icon, size: 18, color: Colors.grey),
             filled: true, fillColor: const Color(0xFFF8F9F9),
             contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),

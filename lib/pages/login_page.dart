@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../services/database_service.dart';
-import '../../data/exsistingdata.dart';
+// import '../../services/database_service.dart';
+// import '../../data/exsistingdata.dart';
 import 'lupa_pw_page.dart';
 import 'regis_page.dart';
 
@@ -36,12 +36,11 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text.trim(),
       );
 
-      final db = DatabaseService();
-      await db.seedDataAndInitialComplaints(LocalData.items);
+      // final db = DatabaseService();
+      // await db.seedDataAndInitialComplaints(LocalData.items);
 
       String uid = userCredential.user!.uid;
 
-      // Ambil data user dari Firestore untuk cek Role
       DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
       if (!userDoc.exists) {
@@ -52,7 +51,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
 
-      // Navigasi & Hapus History (User tidak bisa 'back' ke halaman login setelah masuk)
+      // Navigasi & Hapus History 
       if (role == "approval") {
         Navigator.pushNamedAndRemoveUntil(context, '/approval_dash', (route) => false);
       } else if (role == "karyawan") {
@@ -143,14 +142,14 @@ class _LoginPageState extends State<LoginPage> {
                     const Text(
                       "Masuk",
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: primaryTeal,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 5),
                     const Text(
-                      "Silakan masuk untuk melanjutkan reservasi.",
+                      "Silakan lengkapi kredensial Anda.",
                       style: TextStyle(fontSize: 14, color: Colors.black54),
                     ),
                     const SizedBox(height: 35),

@@ -79,6 +79,118 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _showEditContactDialog() {
+    final TextEditingController contactController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+    bool isObscure = true;
+
+    // Ambil nomor lama
+    FirebaseFirestore.instance.collection('settings').doc('contact').get().then((doc) {
+      if (doc.exists && mounted) {
+        contactController.text = doc.data()?['whatsapp'] ?? "";
+      }
+    });
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Edit Kontak Refund", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("Masukkan password Anda untuk mengubah.", 
+                style: TextStyle(fontSize: 12, color: Colors.grey)),
+              const SizedBox(height: 20),
+              
+              // Field Nomor WhatsApp
+              TextField(
+                controller: contactController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: "Nomor WhatsApp Baru",
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.phone),
+                ),
+              ),
+              const SizedBox(height: 15),
+
+              // Field Verifikasi Password
+              TextField(
+                controller: passwordController,
+                obscureText: isObscure,
+                decoration: InputDecoration(
+                  labelText: "Konfirmasi Password Admin",
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(isObscure ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setDialogState(() => isObscure = !isObscure),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
+              onPressed: () async {
+                if (contactController.text.isEmpty || passwordController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Semua field wajib diisi")));
+                  return;
+                }
+
+                final nav = Navigator.of(context);
+                final sm = ScaffoldMessenger.of(context);
+
+                try {
+                  // Tampilkan loading
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => const Center(child: CircularProgressIndicator()),
+                  );
+
+                  // LOGIKA KEAMANAN: Re-autentikasi sebelum simpan
+                  final user = FirebaseAuth.instance.currentUser;
+                  AuthCredential credential = EmailAuthProvider.credential(
+                    email: user!.email!,
+                    password: passwordController.text.trim(),
+                  );
+
+                  await user.reauthenticateWithCredential(credential);
+
+                  // Jika password benar, baru simpan ke Firestore
+                  await FirebaseFirestore.instance
+                      .collection('settings')
+                      .doc('contact')
+                      .set({'whatsapp': contactController.text.trim()});
+                  
+                  nav.pop(); // Tutup loading
+                  nav.pop(); // Tutup dialog input
+                  
+                  sm.showSnackBar(const SnackBar(
+                    content: Text("Kontak refund berhasil diperbarui"),
+                    backgroundColor: Colors.green,
+                  ));
+                } catch (e) {
+                  nav.pop(); // Tutup loading
+                  String errorMsg = "Password salah atau terjadi kesalahan";
+                  if (e.toString().contains("wrong-password")) errorMsg = "Password yang Anda masukkan salah!";
+                  
+                  sm.showSnackBar(SnackBar(content: Text(errorMsg), backgroundColor: Colors.red));
+                }
+              },
+              child: const Text("Simpan", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,7 +235,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               border: Border.all(color: Colors.white, width: 4),
               boxShadow: [
                 BoxShadow(
-                  // Perbaikan withOpacity ke withValues
                   color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
@@ -167,19 +278,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
             context: context,
             builder: (context) => const DialogEditProfil(),
           );
-
           if (result == true && mounted) {
             _loadUserData(); 
           }
         }),
+        
+        if (role == 'approval')
+          _menuItem(Icons.contact_support_outlined, "Edit Informasi Refund", onTap: _showEditContactDialog),
+
         _menuItem(Icons.play_circle_outline, "Tutorial Penggunaan Aplikasi", onTap: _launchTutorial),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Divider(color: Color(0xFFF0F4F4)),
         ),
-        _menuItem(Icons.logout_rounded, "Keluar", isLogout: true, onTap: () {
-          _showLogoutConfirm();
-        }),
+        _menuItem(Icons.logout_rounded, "Keluar", isLogout: true, onTap: _showLogoutConfirm),
       ],
     );
   }
@@ -192,12 +304,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         content: const Text("Yakin ingin keluar?"),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
-          TextButton(
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               Navigator.pop(context);
               await _logout();
             },
-            child: const Text("Keluar", style: TextStyle(color: Colors.red)),
+            child: const Text("Keluar", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -231,7 +344,6 @@ class DialogEditProfil extends StatefulWidget {
 
 class _DialogEditProfilState extends State<DialogEditProfil> {
   final _formKey = GlobalKey<FormState>();
-  
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   final TextEditingController _oldPwController = TextEditingController();
@@ -240,7 +352,6 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
   File? _image;
   bool _isObscureNew = true;
   bool _isObscureOld = true;
-  bool _isFetching = true;
 
   @override
   void initState() {
@@ -253,16 +364,11 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
   Future<void> _loadCurrentData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
       if (doc.exists && mounted) {
         setState(() {
           _nameController.text = doc.data()?['name'] ?? "";
           _emailController.text = doc.data()?['email'] ?? "";
-          _isFetching = false;
         });
       }
     }
@@ -289,10 +395,8 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16),
       backgroundColor: Colors.white,
-      elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
-        width: MediaQuery.of(context).size.width,
         padding: const EdgeInsets.all(24),
         child: SingleChildScrollView(
           child: Form(
@@ -301,104 +405,54 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Edit Profil", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context), 
-                      icon: const Icon(Icons.close, color: Colors.grey, size: 20)
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                const Divider(color: Color(0xFFF0F4F4)),
+                const Text("Edit Profil", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Divider(),
                 const SizedBox(height: 20),
                 Center(child: _buildAvatarPicker()),
+                const SizedBox(height: 20),
+                _buildTextField(_nameController, "Nama Lengkap", Icons.person_outline),
+                const SizedBox(height: 15),
+                _buildTextField(_emailController, "Email", Icons.email_outlined),
+                const SizedBox(height: 15),
+                _buildTextField(_newPwController, "Password Baru (Opsional)", Icons.lock_open, isPassword: true, isNew: true),
+                const SizedBox(height: 15),
+                _buildTextField(_oldPwController, "Password Lama (Wajib simpan)", Icons.lock, isPassword: true, isNew: false),
                 const SizedBox(height: 30),
-                _fieldLabel("Nama Lengkap"),
-                _buildTextField(_nameController, "Contoh: user", Icons.person_outline),
-                const SizedBox(height: 20),
-                _fieldLabel("Email"),
-                _buildTextField(_emailController, "user@mail.com", Icons.email_outlined),
-                const SizedBox(height: 20),
-                _fieldLabel("Password Baru (Opsional)"),
-                _buildTextField(_newPwController, "••••••••", Icons.lock_open_outlined, isPassword: true, isNew: true),
-                const SizedBox(height: 20),
-                _fieldLabel("Konfirmasi Password Lama"),
-                _buildTextField(_oldPwController, "Wajib diisi untuk simpan", Icons.lock_outline, isPassword: true, isNew: false),
-                const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF008996),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008996)),
                     onPressed: () async {
                       if (!_formKey.currentState!.validate()) return;
-
-                      // Simpan navigator sebelum async gap
-                      final navigator = Navigator.of(context);
-                      final scaffoldMessenger = ScaffoldMessenger.of(context);
+                      // FIX ERROR [Line 260/261]: Simpan context ke variabel lokal
+                      final nav = Navigator.of(context);
+                      final sm = ScaffoldMessenger.of(context);
 
                       try {
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (context) => const Center(child: CircularProgressIndicator()),
-                        );
-
                         final user = FirebaseAuth.instance.currentUser;
                         final cred = EmailAuthProvider.credential(
                           email: user!.email!,
                           password: _oldPwController.text.trim(),
                         );
-
                         await user.reauthenticateWithCredential(cred);
-
-                        if (_emailController.text.trim() != user.email) {
-                          await user.verifyBeforeUpdateEmail(_emailController.text.trim());
-                        }
-
+                        
                         if (_newPwController.text.trim().isNotEmpty) {
                           await user.updatePassword(_newPwController.text.trim());
                         }
 
-                        await FirebaseFirestore.instance
-                            .collection('users')
-                            .doc(user.uid)
-                            .update({
+                        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
                           'name': _nameController.text.trim(),
                           'email': _emailController.text.trim(),
                         });
 
-                        if (!mounted) return;
-                        
-                        // Gunakan instance navigator yang sudah disimpan
-                        navigator.pop(); // Tutup Loading
-                        navigator.pop(true); // Tutup Dialog & kirim true
-                        
-                        scaffoldMessenger.showSnackBar(
-                          const SnackBar(content: Text("Profil berhasil diperbarui")),
-                        );
+                        nav.pop(true);
+                        sm.showSnackBar(const SnackBar(content: Text("Berhasil diupdate")));
                       } catch (e) {
-                        if (!mounted) return;
-                        navigator.pop(); // Tutup Loading
-                        
-                        String errorMsg = e.toString();
-                        if (errorMsg.contains("wrong-password")) {
-                          errorMsg = "Password lama salah";
-                        }
-
-                        scaffoldMessenger.showSnackBar(
-                          SnackBar(content: Text("Gagal: $errorMsg"), backgroundColor: Colors.red),
-                        );
+                        sm.showSnackBar(SnackBar(content: Text("Gagal: $e")));
                       }
                     },
-                    child: const Text("Simpan Perubahan", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: const Text("Simpan", style: TextStyle(color: Colors.white)),
                   ),
                 ),
               ],
@@ -409,42 +463,15 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
     );
   }
 
-  Widget _fieldLabel(String label) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87)),
-    );
-  }
-
   Widget _buildAvatarPicker() {
     return Stack(
       children: [
-        Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: const Color(0xFFF0F4F4), width: 2),
-          ),
-          child: CircleAvatar(
-            radius: 45,
-            backgroundColor: const Color(0xFFF8FBFB),
-            backgroundImage: _image != null ? FileImage(_image!) : null,
-            child: _image == null 
-              ? const Icon(Icons.person, size: 40, color: Color(0xFF008996)) 
-              : null,
-          ),
+        CircleAvatar(
+          radius: 45,
+          backgroundImage: _image != null ? FileImage(_image!) : null,
+          child: _image == null ? const Icon(Icons.person, size: 40) : null,
         ),
-        Positioned(
-          bottom: 0,
-          right: 0,
-          child: InkWell(
-            onTap: _getImage,
-            child: const CircleAvatar(
-              radius: 14,
-              backgroundColor: Color(0xFF008996),
-              child: Icon(Icons.camera_alt, size: 14, color: Colors.white),
-            ),
-          ),
-        ),
+        Positioned(bottom: 0, right: 0, child: InkWell(onTap: _getImage, child: const CircleAvatar(radius: 14, child: Icon(Icons.camera_alt, size: 14)))),
       ],
     );
   }
@@ -453,38 +480,22 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
     return TextFormField(
       controller: controller,
       obscureText: isPassword ? (isNew ? _isObscureNew : _isObscureOld) : false,
-      style: const TextStyle(fontSize: 14),
       decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-        prefixIcon: Icon(icon, color: const Color(0xFF008996), size: 20),
-        filled: true,
-        fillColor: const Color(0xFFF8FBFB),
-        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFF0F4F4)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF008996)),
-        ),
-        suffixIcon: isPassword
-            ? IconButton(
-                icon: Icon(
-                  (isNew ? _isObscureNew : _isObscureOld) ? Icons.visibility_off : Icons.visibility,
-                  size: 18, color: Colors.grey,
-                ),
-                onPressed: () => setState(() {
-                  if (isNew) _isObscureNew = !_isObscureNew;
-                  else _isObscureOld = !_isObscureOld;
-                }),
-              )
-            : null,
+        labelText: hint,
+        prefixIcon: Icon(icon),
+        suffixIcon: isPassword ? IconButton(
+          icon: Icon((isNew ? _isObscureNew : _isObscureOld) ? Icons.visibility_off : Icons.visibility),
+          onPressed: () => setState(() {
+            if (isNew) _isObscureNew = !_isObscureNew; else _isObscureOld = !_isObscureOld;
+          }),
+        ) : null,
       ),
+      // FIX ERROR [Line 565/566]: Enclose in block
       validator: (val) {
-        if (!isPassword || !isNew) { 
-          if (val == null || val.trim().isEmpty) return "Bagian ini wajib diisi";
+        if (!isPassword || !isNew) {
+          if (val == null || val.trim().isEmpty) {
+            return "Wajib diisi";
+          }
         }
         return null;
       },

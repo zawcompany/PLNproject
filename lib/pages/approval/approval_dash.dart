@@ -21,82 +21,159 @@ class _DashApprovalState extends State<DashApproval> {
   static const Color primaryTeal = Color(0xFF008996);
   static const Color blueBoxColor = Color(0xffbfe0e6);
 
-  // FUNGSI DIALOG UTAMA: Pilih Wisma atau Kelas
+  // FUNGSI DIALOG UTAMA: Pilih Wisma atau Kelas dengan Style Baru
   void _showBookingDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Pilih Jenis Pesanan", style: TextStyle(fontWeight: FontWeight.bold, color: primaryTeal)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDialogOption(
-              icon: Icons.home_work_outlined,
-              label: "Kamar Wisma",
-              onTap: () {
-                Navigator.pop(context);
-                _showWismaTypeDialog(); // Lanjut ke pilihan Internal/Eksternal
-              },
-            ),
-            const Divider(),
-            _buildDialogOption(
-              icon: Icons.school_outlined,
-              label: "Ruang Kelas",
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/kelas_general');
-              },
-            ),
-          ],
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Garis dekoratif atas
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "Pilih Jenis Pesanan",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold, 
+                  fontSize: 18,
+                  color: primaryTeal
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildDialogOption(
+                icon: Icons.home_work_rounded,
+                label: "Kamar Wisma",
+                color: const Color(0xFFE0F2F1),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showWismaTypeDialog(); 
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildDialogOption(
+                icon: Icons.school_rounded,
+                label: "Ruang Kelas",
+                color: const Color(0xFFE3F2FD),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/kelas_general');
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // FUNGSI DIALOG KEDUA: Pilih Internal atau Eksternal untuk Wisma
+  // FUNGSI DIALOG KEDUA: Pilih Internal atau Eksternal untuk Wisma dengan Style Baru
   void _showWismaTypeDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Kategori Tamu Wisma", style: TextStyle(fontWeight: FontWeight.bold, color: primaryTeal)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDialogOption(
-              icon: Icons.badge_outlined,
-              label: "Internal (Karyawan/NIP)",
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/wisma_int_general');
-              },
-            ),
-            const Divider(),
-            _buildDialogOption(
-              icon: Icons.public_outlined,
-              label: "Eksternal (Umum/NIK)",
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/wisma_eks_general');
-              },
-            ),
-          ],
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Kategori Tamu Wisma",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold, 
+                  fontSize: 18,
+                  color: primaryTeal
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildDialogOption(
+                icon: Icons.badge_rounded,
+                label: "Internal (Karyawan/NIP)",
+                color: const Color(0xFFF3E5F5),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/wisma_int_general');
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildDialogOption(
+                icon: Icons.public_rounded,
+                label: "Eksternal (Umum/NIK)",
+                color: const Color(0xFFFFF3E0),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/wisma_eks_general');
+                },
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Kembali", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+              )
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // Helper untuk item pilihan di dalam Dialog
-  Widget _buildDialogOption({required IconData icon, required String label, required VoidCallback onTap}) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: primaryTeal.withOpacity(0.1),
-        child: Icon(icon, color: primaryTeal, size: 20),
-      ),
-      title: Text(label, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
-      trailing: const Icon(Icons.chevron_right, size: 18),
+  // Helper yang diperbarui untuk opsi Dialog (Card Style)
+  Widget _buildDialogOption({
+    required IconData icon, 
+    required String label, 
+    required Color color,
+    required VoidCallback onTap
+  }) {
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: primaryTeal, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: primaryTeal),
+          ],
+        ),
+      ),
     );
   }
 
@@ -133,7 +210,7 @@ class _DashApprovalState extends State<DashApproval> {
                         elevation: 2,
                       ),
                       icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-                      label: const Text("Buat Pesanan Baru", 
+                      label: const Text("Buat Pemesanan Baru", 
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
                     ),
                   ),
@@ -239,7 +316,7 @@ class _DashApprovalState extends State<DashApproval> {
       child: Stack(
         children: [
           Positioned.fill(child: SvgPicture.asset('lib/assets/images/header_riwayat.svg', fit: BoxFit.cover)),
-          Positioned.fill(child: Container(color: blueBoxColor.withOpacity(0.5))),
+          Positioned.fill(child: Container(color: blueBoxColor.withValues(alpha: 0.5))),
         ],
       ),
     );
@@ -253,7 +330,7 @@ class _DashApprovalState extends State<DashApproval> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text("Selamat Datang,", style: TextStyle(fontSize: 14, color: Colors.black54)),
-            Text("Admin PLN UDPL", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryTeal)),
+            Text("PLN UDPL Makassar", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryTeal)),
           ],
         ),
       ],
@@ -289,7 +366,6 @@ class _DashApprovalState extends State<DashApproval> {
       items: data.map((item) {
         return GestureDetector(
           onTap: () {
-            // NAVIGASI KE DETAIL KHUSUS APPROVAL
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -314,7 +390,7 @@ class _DashApprovalState extends State<DashApproval> {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter, 
                   end: Alignment.topCenter, 
-                  colors: [Colors.black.withOpacity(0.8), Colors.transparent]
+                  colors: [Colors.black.withValues(alpha: 0.8), Colors.transparent]
                 ),
               ),
               padding: const EdgeInsets.all(12),
@@ -335,7 +411,7 @@ class _DashApprovalState extends State<DashApproval> {
       height: 130, 
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4))]),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 4))]),
       child: Stack(
         children: [
           Positioned(bottom: -5, left: 0, right: 0, child: SvgPicture.asset(svgPath, height: 70, fit: BoxFit.contain)),

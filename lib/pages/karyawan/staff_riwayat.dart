@@ -318,7 +318,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
       stream: FirebaseFirestore.instance.collection('bookings').where('userId', isEqualTo: currentUserId).snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-        final listKeywordsKelas = ["Kelas A", "Kelas B", "Kelas Lab B", "Aula", "Kelas Toddopuli"];
+        final listKeywordsKelas = ["Kelas A", "Kelas B", "Lab B", "Aula", "Kelas Toddopuli"];
         var bookings = snapshot.data!.docs.map((doc) => BookingModel.fromMap(doc.id, doc.data() as Map<String, dynamic>)).toList();
 
         bookings = bookings.where((item) {

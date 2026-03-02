@@ -318,6 +318,13 @@ class _FormKelasPageState extends State<FormKelasPage> {
             controller: controller,
             keyboardType: type,
             onChanged: onChanged,
+            // --- TAMBAHKAN LOGIKA INI ---
+            onTap: () {
+              if (controller.text == '0') {
+                controller.clear();
+              }
+            },
+            // ----------------------------
             validator: (value) =>
                 (value == null || value.isEmpty) ? "Wajib diisi" : null,
             decoration: InputDecoration(

@@ -145,11 +145,11 @@ class _RegisterPageState extends State<RegisterPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Daftar Akun",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryTeal),
+                      "Daftar",
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: primaryTeal),
                     ),
                     const Text(
-                      "Mulai perjalanan Anda di PLN UPDL Makassar",
+                      "Lengkapi data diri Anda!",
                       style: TextStyle(fontSize: 13, color: Colors.black54),
                     ),
                     const SizedBox(height: 25),
@@ -158,7 +158,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     _buildTextField(prefixIcon: Icons.person_outline, controller: _nameController),
 
                     const SizedBox(height: 16),
-                    _labelField("Email Institusi"),
+                    _labelField("Email"),
                     _buildTextField(prefixIcon: Icons.email_outlined, controller: _emailController),
 
                     const SizedBox(height: 16),

@@ -53,7 +53,7 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
                     _buildChips(["Semua", "Anggrek", "Cempaka", "Bougenville", "Dahlia", "Edelweiss", "Flamboyan", "Gladiol", "Hortensia", "Toddopuli"], selectedWisma, setDialogState),
                     const SizedBox(height: 20),
                     _buildFilterLabel("Pilih Kelas"),
-                    _buildChips(["Semua", "Kelas A", "Kelas B", "Kelas Lab B", "Aula", "Kelas Toddopuli"], selectedKelas, setDialogState),
+                    _buildChips(["Semua", "Kelas A", "Kelas B", "Lab A", "Lab B", "Lab C", "Aula", "Kelas Toddopuli"], selectedKelas, setDialogState),
                     const SizedBox(height: 20),
                     _buildFilterLabel("Status"),
                     _buildChips(statusOptions, selectedStatus, setDialogState),
@@ -224,7 +224,7 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
           allItems = complaintDocs.docs.map((doc) => ComplaintModel.fromMap(doc.id, doc.data() as Map<String, dynamic>)).toList();
         }
 
-        final listKeywordsKelas = ["Kelas A", "Kelas B", "Kelas Lab B", "Aula", "Kelas Toddopuli"];
+        final listKeywordsKelas = ["Kelas A", "Kelas B", "Lab B", "Aula", "Kelas Toddopuli"];
 
         allItems = allItems.where((item) {
           String name = (item is BookingModel) ? item.itemName : (item as ComplaintModel).roomName;

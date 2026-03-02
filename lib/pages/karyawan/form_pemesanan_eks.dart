@@ -304,6 +304,13 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
           TextFormField(
             controller: controller,
             keyboardType: type,
+            // --- TAMBAHKAN LOGIKA INI ---
+            onTap: () {
+              if (controller.text == '0') {
+                controller.clear();
+              }
+            },
+            // ----------------------------
             validator: (value) {
               if (isRequired && (value == null || value.isEmpty)) return "Wajib diisi";
               return null;
