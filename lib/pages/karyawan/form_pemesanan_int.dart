@@ -288,13 +288,11 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
           TextFormField(
             controller: controller,
             keyboardType: type,
-            // --- TAMBAHKAN LOGIKA INI ---
             onTap: () {
               if (controller.text == '0') {
                 controller.clear();
               }
             },
-            // ----------------------------
             validator: (value) {
               if (isRequired && (value == null || value.isEmpty)) return "Wajib diisi";
               return null;
@@ -338,7 +336,7 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
                 if (isFileSelected)
                   const Positioned(
                     right: 16,
-                    child: Text("Berhasil ✔", style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
+                    child: Text("Berhasil", style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
                   ),
               ],
             ),

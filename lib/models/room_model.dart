@@ -6,7 +6,6 @@ class RoomModel {
   final int capacity;
   final RoomCondition condition;
 
-  // Constructor Standar (Digunakan saat mengambil data dari Firebase)
   RoomModel({
     required this.id,
     required this.name,
@@ -14,25 +13,21 @@ class RoomModel {
     this.condition = RoomCondition.kosong, 
   });
 
-  // --- TAMBAHAN: CONSTRUCTOR KHUSUS SEEDING ---
-  // Gunakan ini di LocalData agar ID dibuat otomatis dari nama
   RoomModel.seed({
     required this.name,
     required this.capacity,
     this.condition = RoomCondition.kosong,
   }) : id = name.replaceAll(' ', '_').toLowerCase();
 
-  // Konversi ke Map untuk diunggah ke Firestore
   Map<String, dynamic> toMap() {
     return {
-      'id': id, // Menggunakan ID yang sudah ada di instance
+      'id': id, 
       'name': name,
       'capacity': capacity,
       'condition': condition.name, 
     };
   }
 
-  // Membuat instance RoomModel dari data Firestore
   factory RoomModel.fromMap(Map<String, dynamic> map) {
     return RoomModel(
       id: map['id'] ?? '', 
@@ -45,7 +40,6 @@ class RoomModel {
     );
   }
 
-  // Helper untuk mengubah data secara parsial
   RoomModel copyWith({
     String? id,
     String? name,

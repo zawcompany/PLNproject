@@ -15,12 +15,16 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+
+  // state
   bool _obscureText = true;
   bool _isLoading = false;
 
+  // controller
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  // fungsi login
   Future<void> loginUser() async {
     if (_emailController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
       _showSnackBar("Email dan Password tidak boleh kosong", Colors.orange);
@@ -30,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       setState(() => _isLoading = true);
 
-      // Proses Sign In
+      // proses sign in firebase
       UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -41,7 +45,9 @@ class _LoginPageState extends State<LoginPage> {
 
       String uid = userCredential.user!.uid;
 
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      // ambil data role dari firestore
+      DocumentSnapshot userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
       if (!userDoc.exists) {
         throw Exception("Profil user tidak ditemukan di database.");
@@ -51,7 +57,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
 
-      // Navigasi & Hapus History 
+      // navigasi berdasarkan role
       if (role == "approval") {
         Navigator.pushNamedAndRemoveUntil(context, '/approval_dash', (route) => false);
       } else if (role == "karyawan") {
@@ -65,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
       if (e.code == 'user-not-found') errorMsg = "Email tidak terdaftar";
       else if (e.code == 'wrong-password') errorMsg = "Password salah";
       else if (e.code == 'invalid-email') errorMsg = "Format email salah";
-      
+
       _showSnackBar(errorMsg, Colors.redAccent);
     } catch (e) {
       _showSnackBar("Sistem Error: ${e.toString()}", Colors.red);
@@ -74,6 +80,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  // snackbar
   void _showSnackBar(String message, Color bgColor) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -101,7 +108,8 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Ilustrasi di bagian atas
+
+          // ilustrasi atas
           Positioned(
             top: size.height * 0.05,
             left: 0,
@@ -113,8 +121,8 @@ class _LoginPageState extends State<LoginPage> {
               fit: BoxFit.contain,
             ),
           ),
-          
-          // Container Form Login
+
+          // container form login
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -139,6 +147,8 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+
+                    // title
                     const Text(
                       "Masuk",
                       style: TextStyle(
@@ -154,6 +164,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 35),
 
+                    // input email
                     _buildLabel("Email"),
                     _buildTextField(
                       controller: _emailController,
@@ -163,6 +174,7 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 20),
 
+                    // input password
                     _buildLabel("Password"),
                     _buildTextField(
                       controller: _passwordController,
@@ -171,6 +183,7 @@ class _LoginPageState extends State<LoginPage> {
                       isPassword: true,
                     ),
 
+                    // lupa password
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
@@ -180,36 +193,57 @@ class _LoginPageState extends State<LoginPage> {
                             MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
                           );
                         },
-                        child: const Text("Lupa password?", style: TextStyle(color: primaryTeal, fontWeight: FontWeight.w600)),
+                        child: const Text(
+                          "Lupa password?",
+                          style: TextStyle(color: primaryTeal, fontWeight: FontWeight.w600),
+                        ),
                       ),
                     ),
 
                     const SizedBox(height: 20),
 
-                    // Tombol Masuk
+                    // tombol masuk
                     SizedBox(
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryTeal,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
                           elevation: 0,
                         ),
                         onPressed: _isLoading ? null : loginUser,
                         child: _isLoading
-                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text("Masuk", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                "Masuk",
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold),
+                              ),
                       ),
                     ),
 
                     const SizedBox(height: 25),
 
+                    // redirect ke register
                     Center(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text("Belum punya akun? ", style: TextStyle(color: Colors.grey)),
+                          const Text(
+                            "Belum punya akun? ",
+                            style: TextStyle(color: Colors.grey),
+                          ),
                           GestureDetector(
                             onTap: () {
                               Navigator.push(
@@ -217,7 +251,12 @@ class _LoginPageState extends State<LoginPage> {
                                 MaterialPageRoute(builder: (context) => const RegisterPage()),
                               );
                             },
-                            child: const Text("Daftar Sekarang", style: TextStyle(color: primaryTeal, fontWeight: FontWeight.bold)),
+                            child: const Text(
+                              "Daftar Sekarang",
+                              style: TextStyle(
+                                  color: primaryTeal,
+                                  fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ],
                       ),
@@ -232,13 +271,19 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  // label field
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(text, style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.black87)),
+      child: Text(
+        text,
+        style: const TextStyle(
+            fontWeight: FontWeight.w500, color: Colors.black87),
+      ),
     );
   }
 
+  // textfield reusable
   Widget _buildTextField({
     required TextEditingController controller,
     required String hintText,
@@ -261,11 +306,19 @@ class _LoginPageState extends State<LoginPage> {
           prefixIcon: Icon(prefixIcon, color: Colors.grey, size: 20),
           suffixIcon: isPassword
               ? IconButton(
-                  icon: Icon(_obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.grey, size: 20),
-                  onPressed: () => setState(() => _obscureText = !_obscureText),
+                  icon: Icon(
+                    _obscureText
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    color: Colors.grey,
+                    size: 20,
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscureText = !_obscureText),
                 )
               : null,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
       ),
     );

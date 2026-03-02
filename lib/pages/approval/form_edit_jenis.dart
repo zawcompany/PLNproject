@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/item_model.dart';
-// FIX ERROR 2: Impor room_model.dart dihapus karena tidak digunakan secara eksplisit di tipe data
 import '../../services/database_service.dart';
 
 class FormEditJenis extends StatefulWidget {
@@ -119,7 +118,7 @@ class _FormEditJenisState extends State<FormEditJenis> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text( // FIX ERROR 3: Tambahkan const di sini
+                    const Text( 
                       "Edit & Tambah Kamar",
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryTeal),
                     ),
@@ -156,7 +155,6 @@ class _FormEditJenisState extends State<FormEditJenis> {
                 
                 _buildTextField(roomCountController, "Jumlah Kamar Baru", Icons.add_box_outlined, type: TextInputType.number, onChanged: _updateRoomFields),
                 
-                // FIX ERROR 4: Hapus .toList() di akhir spread operator
                 ...roomNameControllers.asMap().entries.map((entry) {
                   return Padding(
                     padding: const EdgeInsets.only(top: 10),
@@ -193,10 +191,7 @@ class _FormEditJenisState extends State<FormEditJenis> {
         prefixIcon: const Icon(Icons.list_alt_rounded, color: primaryTeal),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
-      // FIX ERROR 1: Ganti 'value' dengan 'initialValue' jika ingin performa lebih baik, 
-      // namun untuk DropdownButtonFormField tetap gunakan 'value' untuk sinkronisasi state.
-      // Deprecated warning ini biasanya muncul pada TextFormField kustom. 
-      // Jika error tetap muncul di baris ini, pastikan 'value' adalah item yang ada di list.
+      
       value: selectedItem != null ? items.firstWhere((e) => e.id == selectedItem!.id, orElse: () => items.first) : null,
       items: items.map((item) => DropdownMenuItem(value: item, child: Text(item.title))).toList(),
       onChanged: (value) {

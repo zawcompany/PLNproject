@@ -26,10 +26,78 @@ class _RiwayatPageState extends State<RiwayatPage> {
   @override
   void initState() {
     super.initState();
-    // Fungsi _markUpdatesAsRead dihapus karena sistem notifikasi tidak digunakan lagi
   }
 
-  // --- DIALOG TINJAU DATA DIRI (DETAIL RESERVASI) ---
+  // --- 1. FUNGSI PEMBANTU UNTUK BARIS DETAIL ---
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(flex: 1, child: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey))),
+          const SizedBox(width: 10),
+          Expanded(
+            flex: 1, 
+            child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold), softWrap: true)
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 2. FUNGSI PEMBANTU INFO REFUND ---
+  Widget _buildRefundInfo() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.blue.shade100),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info_outline, size: 14, color: Colors.blue),
+              SizedBox(width: 6),
+              Text("Informasi Refund", 
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blue)),
+            ],
+          ),
+          SizedBox(height: 6),
+          Text(
+            "Untuk proses pengembalian dana, silakan hubungi Admin melalui nomor WhatsApp berikut:",
+            style: TextStyle(fontSize: 10, color: Colors.black87),
+          ),
+          SizedBox(height: 4),
+          Text(
+            "088123456789",
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 3. FUNGSI PEMBANTU TOMBOL TUTUP ---
+  Widget _buildCloseButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 45,
+      child: ElevatedButton(
+        onPressed: () => Navigator.pop(context),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+        ),
+        child: const Text("Tutup", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  // --- DIALOG DETAIL RESERVASI ---
   void _showDetailDialog(BookingModel booking) {
     showDialog(
       context: context,
@@ -56,7 +124,10 @@ class _RiwayatPageState extends State<RiwayatPage> {
                 _buildDetailRow("NIK", booking.nik ?? "-"),
                 if (booking.nip != null && booking.nip!.isNotEmpty) _buildDetailRow("NIP", booking.nip!),
                 if (booking.address != null && booking.address!.isNotEmpty) _buildDetailRow("Alamat", booking.address!),
-                _buildDetailRow("Kamar/Kelas", booking.itemName),
+                
+                // MENAMPILKAN DETAIL (Misal: Wisma Gladiol 103)
+                _buildDetailRow("Kamar/Kelas", "${booking.itemName} ${booking.roomIds.join(', ')}"),
+                
                 _buildDetailRow("Periode", "${DateFormat('dd MMM yyyy').format(booking.start)} - ${DateFormat('dd MMM yyyy').format(booking.end)}"),
                 
                 if (booking.userType == 'eksternal') ...[
@@ -66,7 +137,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
                   _buildDetailRow("Jumlah Tamu", "${booking.guestCount ?? 0}"),
                 ],
 
-                // BAGIAN ALASAN PENOLAKAN & LOGIKA REFUND
                 if (booking.status == BookingStatus.rejected) ...[
                   const SizedBox(height: 16),
                   const Divider(),
@@ -80,54 +150,12 @@ class _RiwayatPageState extends State<RiwayatPage> {
                         : booking.rejectReason!, 
                     style: const TextStyle(fontSize: 12, color: Colors.black87, fontStyle: FontStyle.italic),
                   ),
-                  
                   const SizedBox(height: 15),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.blue.shade100),
-                    ),
-                    child: const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.info_outline, size: 14, color: Colors.blue),
-                            SizedBox(width: 6),
-                            Text("Informasi Refund", 
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blue)),
-                          ],
-                        ),
-                        SizedBox(height: 6),
-                        Text(
-                          "Untuk proses pengembalian dana, silakan hubungi Admin melalui nomor WhatsApp berikut:",
-                          style: TextStyle(fontSize: 10, color: Colors.black87),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          "088123456789",
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildRefundInfo(), 
                 ],
 
                 const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  height: 45,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
-                    ),
-                    child: const Text("Tutup", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                )
+                _buildCloseButton(),
               ],
             ),
           ),
@@ -136,24 +164,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(flex: 1, child: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey))),
-          const SizedBox(width: 10),
-          Expanded(
-            flex: 1, 
-            child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold), softWrap: true)
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- FILTER & DELETE LOGIC (Tetap sama seperti kode awal Anda) ---
   void _showFilterDialog() {
     showDialog(
       context: context,
@@ -292,7 +302,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                 onTap: () => setState(() { isSelectionMode = !isSelectionMode; selectedBookingIds.clear(); }),
                 child: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: isSelectionMode ? Colors.red.withValues(alpha: 0.1) : primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: isSelectionMode ? Colors.red.withOpacity(0.1) : primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
                   child: Icon(isSelectionMode ? Icons.close : Icons.delete_outline, color: isSelectionMode ? Colors.red : primaryColor, size: 20),
                 ),
               ),
@@ -301,7 +311,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                 onTap: _showFilterDialog,
                 child: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
                   child: Icon(Icons.filter_list_rounded, color: primaryColor, size: 20),
                 ),
               ),
@@ -362,7 +372,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
         decoration: BoxDecoration(
           color: Colors.white, borderRadius: BorderRadius.circular(15),
           border: Border.all(color: isSelected ? Colors.red : const Color(0xFFF0F4F4), width: isSelected ? 2 : 1),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
         ),
         child: Row(
           children: [
@@ -374,7 +384,12 @@ class _RiwayatPageState extends State<RiwayatPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(child: Text(booking.itemName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis)),
+                      Expanded(child: Text(
+                        "${booking.itemName.replaceAll('_', ' ')} ${booking.roomIds.join(' ').replaceAll('_', ' ')}", 
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), 
+                        overflow: TextOverflow.ellipsis,
+                        )
+                      ),
                       Text(DateFormat('dd MMM yyyy').format(booking.start), style: const TextStyle(color: Colors.grey, fontSize: 10)),
                     ],
                   ),
@@ -389,7 +404,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                         onTap: () => _showDetailDialog(booking),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), 
-                          decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(8), border: Border.all(color: statusColor.withValues(alpha: 0.3))),
+                          decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(8), border: Border.all(color: statusColor.withOpacity(0.3))),
                           child: Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold)),
                         ),
                       ),

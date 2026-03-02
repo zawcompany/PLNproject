@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart'; 
 import '../widgets/navbar.dart';
+import '../services/database_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,6 +20,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String name = "User";
   String email = "useruser@gmail.com";
   String role = "";
+  String? photoUrl;
   bool isLoading = true;
 
   @override
@@ -241,10 +243,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-            child: const CircleAvatar(
+            child: CircleAvatar(
               radius: 50, 
-              backgroundColor: Color(0xFFE0E6E6),
-              child: Icon(Icons.person, size: 65, color: Colors.white),
+              backgroundColor: const Color(0xFFE0E6E6),
+              backgroundImage: photoUrl != null ? NetworkImage(photoUrl!) : null,
+              child: photoUrl == null 
+                  ? const Icon(Icons.person, size: 65, color: Colors.white) 
+                  : null,
             ),
           ),
         ),
@@ -343,6 +348,7 @@ class DialogEditProfil extends StatefulWidget {
 }
 
 class _DialogEditProfilState extends State<DialogEditProfil> {
+  final DatabaseService _db = DatabaseService();
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _emailController;
@@ -425,31 +431,51 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
                     style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008996)),
                     onPressed: () async {
                       if (!_formKey.currentState!.validate()) return;
-                      // FIX ERROR [Line 260/261]: Simpan context ke variabel lokal
+                      
                       final nav = Navigator.of(context);
                       final sm = ScaffoldMessenger.of(context);
 
                       try {
                         final user = FirebaseAuth.instance.currentUser;
+                        if (user == null) return;
+
+                        //Verifikasi Password Lama
                         final cred = EmailAuthProvider.credential(
-                          email: user!.email!,
+                          email: user.email!,
                           password: _oldPwController.text.trim(),
                         );
                         await user.reauthenticateWithCredential(cred);
                         
+                        // Upload Foto jika ada foto baru yang dipilih
+                        String? photoUrl;
+                        if (_image != null) {
+                          photoUrl = await _db.uploadFile(_image!, 'profile_pictures');
+                        }
+
+                        //Update Password jika diisi
                         if (_newPwController.text.trim().isNotEmpty) {
                           await user.updatePassword(_newPwController.text.trim());
                         }
 
-                        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+                        //Update data ke Firestore (Termasuk URL Foto Baru)
+                        Map<String, dynamic> updateData = {
                           'name': _nameController.text.trim(),
                           'email': _emailController.text.trim(),
-                        });
+                        };
+                        
+                        if (photoUrl != null) {
+                          updateData['photoUrl'] = photoUrl; 
+                        }
+
+                        await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(user.uid)
+                            .update(updateData);
 
                         nav.pop(true);
-                        sm.showSnackBar(const SnackBar(content: Text("Berhasil diupdate")));
+                        sm.showSnackBar(const SnackBar(content: Text("Profil berhasil diperbarui")));
                       } catch (e) {
-                        sm.showSnackBar(SnackBar(content: Text("Gagal: $e")));
+                        sm.showSnackBar(SnackBar(content: Text("Gagal: $e"), backgroundColor: Colors.red));
                       }
                     },
                     child: const Text("Simpan", style: TextStyle(color: Colors.white)),
@@ -486,11 +512,14 @@ class _DialogEditProfilState extends State<DialogEditProfil> {
         suffixIcon: isPassword ? IconButton(
           icon: Icon((isNew ? _isObscureNew : _isObscureOld) ? Icons.visibility_off : Icons.visibility),
           onPressed: () => setState(() {
-            if (isNew) _isObscureNew = !_isObscureNew; else _isObscureOld = !_isObscureOld;
+            if (isNew) {
+              _isObscureNew = !_isObscureNew;
+            } else {
+              _isObscureOld = !_isObscureOld;
+            }
           }),
         ) : null,
       ),
-      // FIX ERROR [Line 565/566]: Enclose in block
       validator: (val) {
         if (!isPassword || !isNew) {
           if (val == null || val.trim().isEmpty) {

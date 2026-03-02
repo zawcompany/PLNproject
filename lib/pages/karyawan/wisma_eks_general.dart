@@ -290,7 +290,6 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
   }
 
   Future<void> _submitGeneralBooking() async {
-    // 1. Validasi Kehadiran Data Dasar
     if (selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Mohon tentukan Periode Menginap!")));
       return;
@@ -303,8 +302,6 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Mohon unggah Bukti Pembayaran!")));
       return;
     }
-
-    // --- LOGIKA VALIDASI KAPASITAS TOTAL ---
     final int totalTamu = (int.tryParse(perempuanController.text) ?? 0) + (int.tryParse(lakiController.text) ?? 0);
     int totalKapasitasDipilih = 0;
     for (var r in selectedRooms) {
@@ -320,9 +317,7 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
       );
       return;
     }
-    // ----------------------------------------
-
-    // 2. Jalankan validator Form (Nama, NIK, Alamat)
+    // Validasi form
     if (_formKey.currentState!.validate()) {
       setState(() => _isSubmitting = true);
       try {

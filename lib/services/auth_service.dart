@@ -4,8 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-
-  // Stream untuk memantau status login pengguna
   Stream<User?> get user => _auth.authStateChanges();
 
   // Login dan ambil data role dari Firestore
@@ -18,7 +16,7 @@ class AuthService {
     }
   }
 
-  // Registrasi Karyawan dengan penyimpanan data ke Firestore
+  // Registrasi Karyawan
   Future<void> registerKaryawan(String email, String password, String name) async {
     try {
       UserCredential res = await _auth.createUserWithEmailAndPassword(
@@ -26,7 +24,6 @@ class AuthService {
         password: password
       );
       
-      // Simpan detail profil ke collection 'users'
       await _db.collection('users').doc(res.user!.uid).set({
         'uid': res.user!.uid,
         'name': name,
@@ -42,16 +39,14 @@ class AuthService {
   // Fungsi Reset Password (Lupa Password)
   Future<void> resetPassword(String email) async {
     try {
-      // Mengatur bahasa email ke Indonesia (Opsional)
       await _auth.setLanguageCode("id");
       await _auth.sendPasswordResetEmail(email: email.trim());
     } on FirebaseAuthException catch (e) {
-      // Melempar error agar bisa ditangkap oleh UI (SnackBar/Dialog)
       throw e.message ?? "Terjadi kesalahan saat mengirim email reset.";
     } catch (e) {
       throw "Terjadi kesalahan yang tidak terduga.";
     }
-  } // <-- Tadi kurang tutup kurung di sini
+  } 
 
   // Fungsi Logout
   Future<void> signOut() async {

@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Tambah ini
+import 'package:firebase_auth/firebase_auth.dart'; 
 import '../../models/item_model.dart';
 import '../../models/room_model.dart';
-import '../../models/booking_model.dart'; // Tambah ini
-import '../../services/database_service.dart'; // Tambah ini
+import '../../models/booking_model.dart';
+import '../../services/database_service.dart';
 
 class FormWismaEksternalPage extends StatefulWidget {
   final RoomModel room;
@@ -182,7 +182,7 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. HEADER (Layout Tetap)
+              // HEADER (Layout Tetap)
               Stack(
                 children: [
                   SizedBox(
@@ -205,7 +205,7 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
                 ],
               ),
 
-              // 2. JUDUL DAN SUBJUDUL (Layout Tetap)
+              // JUDUL DAN SUBJUDUL
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
                 child: Column(
@@ -224,7 +224,7 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
                 ),
               ),
 
-              // 3. FORM BODY
+              // FORM BODY
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Form(
@@ -292,7 +292,6 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
     );
   }
 
-  // Widget helper tetap sama persis layoutnya
   Widget _buildField(String label, TextEditingController controller, IconData icon, [TextInputType type = TextInputType.text, bool isRequired = true]) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
@@ -304,13 +303,11 @@ class _FormWismaEksternalPageState extends State<FormWismaEksternalPage> {
           TextFormField(
             controller: controller,
             keyboardType: type,
-            // --- TAMBAHKAN LOGIKA INI ---
             onTap: () {
               if (controller.text == '0') {
                 controller.clear();
               }
             },
-            // ----------------------------
             validator: (value) {
               if (isRequired && (value == null || value.isEmpty)) return "Wajib diisi";
               return null;

@@ -48,11 +48,11 @@ class WelcomePage extends StatelessWidget {
                           ),
                         ],
                       ),
-                      Image.asset(
-                        "lib/assets/images/logo.png",
-                        height: 50,
-                        fit: BoxFit.contain, 
-                      ),
+                      // Image.asset(
+                      //   "lib/assets/images/logo_app.png",
+                      //   height: 55,
+                      //   fit: BoxFit.contain, 
+                      // ),
                     ],
                   ),
                 ),
@@ -61,7 +61,7 @@ class WelcomePage extends StatelessWidget {
                   height: size.height * 0.48,
                   child: SvgPicture.asset(
                     "lib/assets/images/welcome_pluskotak.svg",
-                    alignment: Alignment.center, // Memastikan gambar di tengah
+                    alignment: Alignment.center, 
                     fit: BoxFit.contain,
                   ),
                 ),

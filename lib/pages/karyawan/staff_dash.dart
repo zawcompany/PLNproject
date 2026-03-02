@@ -103,7 +103,7 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. TOP HEADER
+                // TOP HEADER
                 SizedBox(
                   width: double.infinity,
                   height: 80,
@@ -132,7 +132,6 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 20),
-                      // 2. Sapaan (Tanpa Notifikasi)
                       const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -151,7 +150,7 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
 
                       const SizedBox(height: 25),
 
-                      // 3. Dua Box Status
+                      // Box Status
                       Row(
                         children: [
                           Expanded(
@@ -286,7 +285,7 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
     return CarouselSlider(
       options: CarouselOptions(
         height: 135, 
-        viewportFraction: 0.52, // Agar lebar item mendekati Expanded box di atas
+        viewportFraction: 0.52, 
         enableInfiniteScroll: false,
         padEnds: false,
         scrollDirection: Axis.horizontal,
@@ -302,7 +301,7 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
           child: Container(
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18), // Sama dengan radius _buildStatBox
+              borderRadius: BorderRadius.circular(18), 
               image: DecorationImage(
                 image: item.imagePath.startsWith('http') 
                     ? NetworkImage(item.imagePath) as ImageProvider 

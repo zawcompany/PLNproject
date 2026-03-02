@@ -25,8 +25,8 @@ class FormKelasPage extends StatefulWidget {
 
 class _FormKelasPageState extends State<FormKelasPage> {
   final _formKey = GlobalKey<FormState>();
-  final DatabaseService _db = DatabaseService(); // Inisialisasi Service
-  bool _isSubmitting = false; // State untuk loading
+  final DatabaseService _db = DatabaseService(); 
+  bool _isSubmitting = false; 
 
   // static const Color softTeal = Color(0xFFE8F1F3);
   static const Color primaryTeal = Color(0xFF008996);
@@ -89,7 +89,6 @@ class _FormKelasPageState extends State<FormKelasPage> {
           totalPayment: 0,
           status: BookingStatus.pending,
           paymentProof: suratTugas?.path,
-          // Data Tambahan
           nik: nikController.text.trim(),
           nip: nipController.text.trim(),
           guestCount: int.tryParse(tamuController.text) ?? 0,
@@ -148,8 +147,8 @@ class _FormKelasPageState extends State<FormKelasPage> {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pop(context); // Tutup dialog
-                      Navigator.pop(context, true); // Kembali ke Detail
+                      Navigator.pop(context);
+                      Navigator.pop(context, true); 
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryTeal,
@@ -176,7 +175,7 @@ class _FormKelasPageState extends State<FormKelasPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Custom Top Bar (Layout Tetap)
+              // Custom Top Bar 
               Column(
                 children: [
                   SizedBox(
@@ -295,7 +294,6 @@ class _FormKelasPageState extends State<FormKelasPage> {
     );
   }
 
-  // Widget Helper tetap sama persis layoutnya
   Widget _buildField({
     required String label,
     required TextEditingController controller,
@@ -318,13 +316,11 @@ class _FormKelasPageState extends State<FormKelasPage> {
             controller: controller,
             keyboardType: type,
             onChanged: onChanged,
-            // --- TAMBAHKAN LOGIKA INI ---
             onTap: () {
               if (controller.text == '0') {
                 controller.clear();
               }
             },
-            // ----------------------------
             validator: (value) =>
                 (value == null || value.isEmpty) ? "Wajib diisi" : null,
             decoration: InputDecoration(

@@ -10,10 +10,8 @@ import '../models/complaint_model.dart';
 class DatabaseService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
-
-  // ==========================================
-  // 1. MANAJEMEN FILE (FIREBASE STORAGE)
-  // ==========================================
+  
+  //MANAJEMEN FILE (FIREBASE STORAGE)
 
   Future<String?> uploadFile(File file, String folder) async {
     try {
@@ -30,10 +28,7 @@ class DatabaseService {
     }
   }
 
-  // ==========================================
-  // 2. MANAJEMEN ITEM & KONDISI KAMAR
-  // ==========================================
-
+  // MANAJEMEN ITEM & KONDISI KAMAR
   Stream<List<ItemModel>> getItems() {
     return _db.collection('items').snapshots().map((snapshot) =>
         snapshot.docs.map((doc) => ItemModel.fromMap(doc.id, doc.data())).toList());
@@ -89,10 +84,7 @@ class DatabaseService {
     });
   }
 
-  // ==========================================
-  // 3. MANAJEMEN BOOKING
-  // ==========================================
-
+  //MANAJEMEN BOOKING
   Future<void> createBooking(BookingModel booking, String itemId) async {
     final batch = _db.batch();
     final bookingRef = _db.collection('bookings').doc(booking.id);
@@ -125,11 +117,7 @@ class DatabaseService {
     });
     await updateRoomConditionByIds(itemId, roomIds, RoomCondition.kosong);
   }
-
-  // ==========================================
-  // 4. MANAJEMEN COMPLAINT (PENGADUAN)
-  // ==========================================
-
+  //MANAJEMEN COMPLAINT (PENGADUAN)
   Future<void> createComplaint(ComplaintModel complaint, String itemId) async {
     await _db.collection('complaints').doc(complaint.id).set(complaint.toMap());
     await updateRoomCondition(itemId, complaint.roomName, RoomCondition.perluPerbaikan);
@@ -148,11 +136,7 @@ class DatabaseService {
     });
     await updateRoomCondition(itemId, roomName, RoomCondition.kosong);
   }
-
-  // ==========================================
   // 5. SYSTEM SEEDER
-  // ==========================================
-
   Future<void> seedDataAndInitialComplaints(List<ItemModel> allItems) async {
     final itemsCollection = _db.collection('items');
     for (var item in allItems) {

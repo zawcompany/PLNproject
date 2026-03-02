@@ -36,7 +36,6 @@ class _DashApprovalState extends State<DashApproval> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Garis dekoratif atas
               Container(
                 width: 40,
                 height: 4,
@@ -132,7 +131,6 @@ class _DashApprovalState extends State<DashApproval> {
     );
   }
 
-  // Helper yang diperbarui untuk opsi Dialog (Card Style)
   Widget _buildDialogOption({
     required IconData icon, 
     required String label, 
@@ -197,7 +195,7 @@ class _DashApprovalState extends State<DashApproval> {
                   
                   _buildRealtimeStats(),
 
-                  // TOMBOL PESAN (Dibawah Box Statistik)
+                  // TOMBOL PESAN
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,

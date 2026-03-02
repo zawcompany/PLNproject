@@ -10,8 +10,12 @@ class ForgotPasswordPage extends StatefulWidget {
 }
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+
+  // controller & service
   final TextEditingController _emailController = TextEditingController();
   final AuthService _authService = AuthService();
+
+  // state
   bool _isLoading = false;
 
   @override
@@ -20,41 +24,63 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     super.dispose();
   }
 
-  // Fungsi untuk menampilkan Dialog Berhasil
+  // dialog sukses
   void _showSuccessDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.check_circle_outline, color: Colors.green, size: 60),
+
+            // icon sukses
+            const Icon(
+              Icons.check_circle_outline,
+              color: Colors.green,
+              size: 60,
+            ),
+
             const SizedBox(height: 20),
+
             const Text(
               "Email Terkirim!",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18),
             ),
+
             const SizedBox(height: 10),
+
             const Text(
               "Silakan cek kotak masuk email Anda untuk instruksi reset password.",
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.black54),
             ),
+
             const SizedBox(height: 20),
+
+            // tombol kembali
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF008996),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(10)),
                 ),
                 onPressed: () {
-                  Navigator.pop(context); // Tutup dialog
-                  Navigator.pop(context); // Kembali ke halaman Login
+                  Navigator.pop(context); // tutup dialog
+                  Navigator.pop(context); // kembali ke login
                 },
-                child: const Text("Kembali ke Login", style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  "Kembali ke Login",
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ),
           ],
@@ -63,12 +89,17 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 
+  // fungsi reset password
   Future<void> _handleResetPassword() async {
     String email = _emailController.text.trim();
 
+    // validasi kosong
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Email tidak boleh kosong"), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text("Email tidak boleh kosong"),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
@@ -77,12 +108,18 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
     try {
       await _authService.resetPassword(email);
+
       if (!mounted) return;
-      _showSuccessDialog(); // Tampilkan dialog jika berhasil
+
+      _showSuccessDialog();
     } catch (e) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -98,7 +135,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Gambar atas
+
+          // ilustrasi atas
           Positioned(
             top: size.height * 0.05,
             left: 0,
@@ -110,7 +148,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             ),
           ),
 
-          // Form
+          // container form
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -124,7 +162,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color:
+                        Colors.black.withOpacity(0.1),
                     blurRadius: 20,
                     offset: const Offset(0, -5),
                   ),
@@ -133,8 +172,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
+
+                    // title
                     const Text(
                       "Lupa Password",
                       style: TextStyle(
@@ -143,66 +185,104 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         color: primaryTeal,
                       ),
                     ),
+
                     const Text(
                       "Masukkan email terdaftar Anda.",
-                      style: TextStyle(fontSize: 14, color: Colors.black54),
+                      style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54),
                     ),
+
                     const SizedBox(height: 30),
-                    const Text("Email", style: TextStyle(color: Colors.grey)),
+
+                    // input email
+                    const Text("Email",
+                        style:
+                            TextStyle(color: Colors.grey)),
                     const SizedBox(height: 8),
+
                     Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFFF2F2F2),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius:
+                            BorderRadius.circular(12),
                       ),
                       child: TextField(
                         controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
+                        keyboardType:
+                            TextInputType.emailAddress,
+                        decoration:
+                            const InputDecoration(
                           border: InputBorder.none,
-                          prefixIcon: Icon(Icons.email_outlined, color: Colors.grey),
-                          contentPadding: EdgeInsets.symmetric(vertical: 15),
-                          hintText: "example@mail.com",
+                          prefixIcon: Icon(
+                              Icons.email_outlined,
+                              color: Colors.grey),
+                          contentPadding:
+                              EdgeInsets.symmetric(
+                                  vertical: 15),
+                          hintText:
+                              "example@mail.com",
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 30),
 
-                    // Tombol Kirim
+                    // tombol kirim
                     SizedBox(
                       width: double.infinity,
                       height: 55,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryTeal,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        style: ElevatedButton
+                            .styleFrom(
+                          backgroundColor:
+                              primaryTeal,
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(
+                                    10),
+                          ),
                         ),
-                        onPressed: _isLoading ? null : _handleResetPassword,
+                        onPressed: _isLoading
+                            ? null
+                            : _handleResetPassword,
                         child: _isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
                             : const Text(
                                 "Kirim",
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight:
+                                      FontWeight.bold,
                                 ),
                               ),
                       ),
                     ),
+
                     const SizedBox(height: 20),
+
+                    // kembali ke login
                     Center(
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment:
+                            MainAxisAlignment.center,
                         children: [
-                          const Text("Sudah punya akun? "),
+                          const Text(
+                              "Sudah punya akun? "),
                           GestureDetector(
-                            onTap: () => Navigator.pop(context),
+                            onTap: () =>
+                                Navigator.pop(
+                                    context),
                             child: const Text(
                               "Masuk",
                               style: TextStyle(
                                 color: primaryTeal,
-                                fontWeight: FontWeight.bold,
+                                fontWeight:
+                                    FontWeight.bold,
                               ),
                             ),
                           ),
