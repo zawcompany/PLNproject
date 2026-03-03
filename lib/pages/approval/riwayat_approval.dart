@@ -234,7 +234,6 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
         String name = (item is BookingModel) ? item.itemName : (item as ComplaintModel).roomName;
         String status = (item is BookingModel) ? item.status.name : (item as ComplaintModel).status.name;
 
-        //Logika Filter Wisma
         bool matchesWisma = false;
         if (selectedWisma.isEmpty) {
           matchesWisma = false; 
@@ -244,7 +243,6 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
           matchesWisma = selectedWisma.any((w) => name.toLowerCase().contains(w.toLowerCase()));
         }
 
-        //Logika Filter Kelas
         bool matchesKelas = false;
         if (selectedKelas.isEmpty) {
           matchesKelas = false; 
@@ -256,7 +254,6 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
 
         bool categoryMatch = matchesWisma || matchesKelas;
 
-        // Logika Filter Status 
         bool statusMatch = false;
         if (selectedStatus.contains("Semua") || selectedStatus.isEmpty) {
           statusMatch = true;
@@ -341,6 +338,22 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
   }
 
   Widget _buildBookingCard(BookingModel booking) {
+    // 1. Bersihkan nama item (Contoh: Wisma_Gladiol -> WISMA GLADIOL)
+    String itemName = booking.itemName.replaceAll('_', ' ').toUpperCase();
+
+    // 2. Ambil list nomor kamar saja dari Room IDs
+    String roomNumbers = booking.roomIds.map((id) {
+      String cleanedId = id.replaceAll('_', ' ').toUpperCase();
+      // Hapus kata 'WISMA' dan nama item agar tidak double
+      cleanedId = cleanedId.replaceAll('WISMA', '').replaceAll(itemName.replaceAll('WISMA', '').trim(), '').trim();
+      return cleanedId;
+    }).where((s) => s.isNotEmpty).join(', ');
+    
+    // 3. Gabungkan: Jika roomNumbers kosong (untuk aula/lab), tampilkan itemName saja
+    String displayTitle = roomNumbers.isEmpty 
+        ? itemName 
+        : "$itemName $roomNumbers";
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -349,7 +362,13 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(booking.itemName.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Expanded(
+                child: Text(
+                  displayTitle, 
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               Text(DateFormat('dd MMM yyyy').format(booking.start), style: const TextStyle(color: Colors.grey, fontSize: 10)),
             ],
           ),
@@ -377,7 +396,13 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(complaint.roomName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Expanded(
+                child: Text(
+                  complaint.roomName.replaceAll('_', ' ').replaceFirst(RegExp(r'Wisma', caseSensitive: false), '').trim().toUpperCase(), 
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               Text(DateFormat('dd MMM yyyy').format(complaint.createdAt), style: const TextStyle(color: Colors.grey, fontSize: 10)),
             ],
           ),
@@ -387,7 +412,16 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildStatusBadge(complaint.status.name, isBooking: false),
+              StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance.collection('complaints').doc(complaint.id).snapshots(),
+                builder: (context, snapshot) {
+                  String status = complaint.status.name;
+                  if (snapshot.hasData && snapshot.data!.exists) {
+                    status = snapshot.data!.get('status');
+                  }
+                  return _buildStatusBadge(status, isBooking: false);
+                }
+              ),
               if (!isSelectionMode) IconButton(onPressed: () => _showTinjauPengaduan(complaint), icon: Icon(Icons.arrow_forward_ios_rounded, color: primaryColor, size: 14)),
             ],
           )
@@ -410,8 +444,8 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
       switch (status) {
         case 'pending': label = "PERLU PERBAIKAN"; color = Colors.red; break;
         case 'repairing': label = "DALAM PERBAIKAN"; color = Colors.orange; break;
-        case 'resolved': label = "SELESAI"; color = primaryColor; break;
         case 'waitingApproval': label = "MENUNGGU PERSETUJUAN"; color = Colors.blue; break;
+        case 'resolved': label = "SELESAI"; color = primaryColor; break;
         default: label = status.toUpperCase();
       }
     }
@@ -479,7 +513,6 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
   final DatabaseService db = DatabaseService();
   bool _isProcessing = false;
 
-  // FUNGSI CHECKOUT MANUAL
   Future<void> _handleManualCheckout() async {
     bool confirm = await showDialog(
       context: context,
@@ -494,11 +527,10 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
     ) ?? false;
 
     if (confirm) {
+      if (!mounted) return;
       setState(() => _isProcessing = true);
       try {
         final snapshot = await FirebaseFirestore.instance.collection('items').get();
-        
-        // Loop Room IDs yang ada di booking ini untuk di-reset ke 'kosong'
         for (var roomId in widget.booking.roomIds) {
           for (var doc in snapshot.docs) {
             List rooms = doc.data()['rooms'] ?? [];
@@ -509,13 +541,7 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
             }
           }
         }
-        
-        // Tandai booking sebagai isRead false agar staff tahu ada update (opsional)
-        await FirebaseFirestore.instance.collection('bookings').doc(widget.booking.id).update({
-          'isRead': false,
-          // 'status': 'completed' // Jika ingin ganti status booking juga bisa di-uncomment
-        });
-
+        await FirebaseFirestore.instance.collection('bookings').doc(widget.booking.id).update({'isRead': false});
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Berhasil Checkout. Kamar kini tersedia.")));
@@ -590,12 +616,12 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
               ],
             ),
             actions: [
-              TextButton(onPressed: _isProcessing ? null : () => Navigator.pop(context), child: const Text("Batal")),
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 onPressed: _isProcessing ? null : () async {
+                  if (!mounted) return;
                   setPopUpState(() => _isProcessing = true);
-                  final navigator = Navigator.of(context);
                   try {
                     String alasan = reasonController.text.trim();
                     if (alasan.isEmpty) alasan = "Tidak ada alasan spesifik.";
@@ -613,9 +639,15 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
                         }
                       }
                     }
-                    if (mounted) { navigator.pop(); navigator.pop(); }
-                  } catch (e) { debugPrint("Gagal: $e"); }
-                  finally { if (mounted) setPopUpState(() => _isProcessing = false); }
+                    if (mounted) { 
+                       Navigator.pop(context); // Tutup dialog penolakan
+                       Navigator.pop(context); // Tutup dialog tinjau
+                    }
+                  } catch (e) { 
+                    debugPrint("Gagal: $e"); 
+                  } finally { 
+                    if (mounted) setPopUpState(() => _isProcessing = false); 
+                  }
                 },
                 child: _isProcessing ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text("Tolak", style: TextStyle(color: Colors.white)),
               ),
@@ -656,7 +688,7 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.red.withOpacity(0.2))),
+                      decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.red.withValues(alpha: 0.2))),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -687,22 +719,20 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
                   _buildFilePreview(lampiran, isWisma && kategoriTamu == "eksternal" ? "Bukti Pembayaran" : "Surat Tugas"),
                   const SizedBox(height: 32),
 
-                  // LOGIKA TOMBOL ACTION
                   if (widget.booking.status == BookingStatus.pending)
                     Row(
                       children: [
                         Expanded(child: OutlinedButton(onPressed: _showRejectDialog, style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text("Tolak", style: TextStyle(color: Colors.red)))),
                         const SizedBox(width: 12),
                         Expanded(child: ElevatedButton(onPressed: () async { 
-                          final navigator = Navigator.of(context);
+                          if (!mounted) return;
                           await db.approveBooking(widget.booking.id); 
                           await FirebaseFirestore.instance.collection('bookings').doc(widget.booking.id).update({'isRead': false});
-                          if (mounted) navigator.pop(); 
+                          if (mounted) Navigator.pop(context); 
                         }, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008996), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text("Terima", style: TextStyle(color: Colors.white)))),
                       ],
                     )
                   else if (widget.booking.status == BookingStatus.approved)
-                    // TOMBOL CHECKOUT MANUAL JIKA SUDAH APPROVED
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -729,7 +759,6 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
   }
 }
 
-// Cari class DialogTinjauPengaduan di file riwayat_approval.dart
 class DialogTinjauPengaduan extends StatefulWidget {
   final ComplaintModel complaint;
   const DialogTinjauPengaduan({super.key, required this.complaint});
@@ -762,37 +791,34 @@ class _DialogTinjauPengaduanState extends State<DialogTinjauPengaduan> {
             ),
             const Divider(height: 30),
             
-            // --- TAMPILKAN FOTO BUKTI DARI TEKNISI ---
-            if (widget.complaint.status.name == 'waitingApproval' || widget.complaint.status == ComplaintStatus.resolved) 
-              FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance.collection('complaints').doc(widget.complaint.id).get(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    String? proofUrl = snapshot.data!.get('completionProof');
-                    if (proofUrl != null) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text("Bukti Perbaikan:", style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(proofUrl, height: 180, width: double.infinity, fit: BoxFit.cover),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      );
-                    }
+            FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance.collection('complaints').doc(widget.complaint.id).get(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  String? proofUrl = snapshot.data!.get('completionProof');
+                  if (proofUrl != null) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Bukti Perbaikan:", style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(proofUrl, height: 180, width: double.infinity, fit: BoxFit.cover),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    );
                   }
-                  return const SizedBox.shrink();
-                },
-              ),
+                }
+                return const SizedBox.shrink();
+              },
+            ),
 
             const Text("Masalah:", style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
             Text(widget.complaint.description, style: const TextStyle(fontSize: 13)),
             const SizedBox(height: 32),
             
-            // --- LOGIKA TOMBOL PERSETUJUAN APPROVAL ---
             StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance.collection('complaints').doc(widget.complaint.id).snapshots(),
               builder: (context, snapshot) {
@@ -800,20 +826,23 @@ class _DialogTinjauPengaduanState extends State<DialogTinjauPengaduan> {
                 
                 String statusStr = snapshot.data!.get('status');
 
-                // Jika teknisi sudah kirim bukti, maka tombol muncul di sisi Approval
                 if (statusStr == 'waitingApproval') {
                   return Row(
                     children: [
-                      // Tombol Tolak (Kembalikan ke Dalam Perbaikan)
                       Expanded(
                         child: OutlinedButton(
                           onPressed: _isLoading ? null : () async {
+                            if (!mounted) return;
                             setState(() => _isLoading = true);
-                            await FirebaseFirestore.instance.collection('complaints').doc(widget.complaint.id).update({
-                              'status': 'repairing',
-                              'rejectReason': 'Bukti kurang jelas atau perbaikan belum selesai'
-                            });
-                            if (mounted) Navigator.pop(context);
+                            try {
+                              await FirebaseFirestore.instance.collection('complaints').doc(widget.complaint.id).update({
+                                'status': 'repairing',
+                                'rejectReason': 'Bukti kurang jelas atau perbaikan belum selesai'
+                              });
+                              if (mounted) Navigator.pop(context);
+                            } finally {
+                              if (mounted) setState(() => _isLoading = false);
+                            }
                           },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Colors.red),
@@ -823,14 +852,17 @@ class _DialogTinjauPengaduanState extends State<DialogTinjauPengaduan> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      // Tombol Setuju (Status jadi Selesai/Resolved)
                       Expanded(
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : () async {
+                            if (!mounted) return;
                             setState(() => _isLoading = true);
-                            // Menggunakan fungsi resolveComplaint yang sudah ada di DatabaseService
-                            await db.resolveComplaint(widget.complaint.id, "Selesai", widget.complaint.roomId);
-                            if (mounted) Navigator.pop(context);
+                            try {
+                              await db.resolveComplaint(widget.complaint.id, "Selesai", widget.complaint.roomId);
+                              if (mounted) Navigator.pop(context);
+                            } finally {
+                              if (mounted) setState(() => _isLoading = false);
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF008996),

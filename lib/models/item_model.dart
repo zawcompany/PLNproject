@@ -10,6 +10,8 @@ class ItemModel {
   final ItemType type;
   bool isDone; 
   final List<RoomModel> rooms;
+  final int priceDay;    
+  final int priceMonth;
 
   ItemModel({
     required this.id, 
@@ -19,6 +21,8 @@ class ItemModel {
     required this.type,
     this.isDone = false, 
     this.rooms = const [],
+    this.priceDay = 0,    
+    this.priceMonth = 0, 
   });
 
   ItemModel.seed({
@@ -29,6 +33,8 @@ class ItemModel {
     required this.type,
     this.isDone = false, 
     this.rooms = const [],
+    this.priceDay = 0,
+    this.priceMonth = 0,
   });
 
   Map<String, dynamic> toMap() {
@@ -40,6 +46,8 @@ class ItemModel {
       'type': type.name,
       'isDone': isDone,
       'rooms': rooms.map((room) => room.toMap()).toList(), 
+      'priceDay': priceDay,    
+      'priceMonth': priceMonth, 
     };
   }
 
@@ -57,6 +65,12 @@ class ItemModel {
       rooms: map['rooms'] != null
           ? (map['rooms'] as List).map((x) => RoomModel.fromMap(x)).toList()
           : [],
+      priceDay: (map['priceDay'] is int) 
+          ? map['priceDay'] 
+          : int.tryParse(map['priceDay']?.toString() ?? '0') ?? 0,
+      priceMonth: (map['priceMonth'] is int) 
+          ? map['priceMonth'] 
+          : int.tryParse(map['priceMonth']?.toString() ?? '0') ?? 0,
     );
   }
 }

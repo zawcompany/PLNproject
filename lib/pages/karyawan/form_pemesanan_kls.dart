@@ -367,7 +367,7 @@ class _FormKelasPageState extends State<FormKelasPage> {
                 if (isFileSelected)
                   const Positioned(
                       right: 16,
-                      child: Text("Terpilih ✔",
+                      child: Text("Terpilih",
                           style: TextStyle(
                               fontSize: 10,
                               color: Colors.green,
