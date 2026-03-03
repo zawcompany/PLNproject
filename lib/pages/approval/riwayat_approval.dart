@@ -411,6 +411,7 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
         case 'pending': label = "PERLU PERBAIKAN"; color = Colors.red; break;
         case 'repairing': label = "DALAM PERBAIKAN"; color = Colors.orange; break;
         case 'resolved': label = "SELESAI"; color = primaryColor; break;
+        case 'waitingApproval': label = "MENUNGGU PERSETUJUAN"; color = Colors.blue; break;
         default: label = status.toUpperCase();
       }
     }
@@ -728,6 +729,7 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
   }
 }
 
+// Cari class DialogTinjauPengaduan di file riwayat_approval.dart
 class DialogTinjauPengaduan extends StatefulWidget {
   final ComplaintModel complaint;
   const DialogTinjauPengaduan({super.key, required this.complaint});
@@ -744,7 +746,6 @@ class _DialogTinjauPengaduanState extends State<DialogTinjauPengaduan> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -760,44 +761,95 @@ class _DialogTinjauPengaduanState extends State<DialogTinjauPengaduan> {
               ],
             ),
             const Divider(height: 30),
+            
+            // --- TAMPILKAN FOTO BUKTI DARI TEKNISI ---
+            if (widget.complaint.status.name == 'waitingApproval' || widget.complaint.status == ComplaintStatus.resolved) 
+              FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance.collection('complaints').doc(widget.complaint.id).get(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    String? proofUrl = snapshot.data!.get('completionProof');
+                    if (proofUrl != null) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Bukti Perbaikan:", style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(proofUrl, height: 180, width: double.infinity, fit: BoxFit.cover),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      );
+                    }
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+
             const Text("Masalah:", style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
             Text(widget.complaint.description, style: const TextStyle(fontSize: 13)),
             const SizedBox(height: 32),
             
-            if (widget.complaint.status != ComplaintStatus.resolved)
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : () async {
-                    setState(() => _isLoading = true);
-                    final navigator = Navigator.of(context);
-                    try {
-                      if (widget.complaint.status == ComplaintStatus.pending) {
-                        await db.startRepair(widget.complaint.id, "Sedang diperbaiki oleh tim teknis", widget.complaint.roomId);
-                      } else if (widget.complaint.status == ComplaintStatus.repairing) {
-                        await db.resolveComplaint(widget.complaint.id, "Masalah telah diselesaikan", widget.complaint.roomId);
-                      }
-                      if (mounted) navigator.pop();
-                    } catch (e) {
-                      debugPrint("Gagal update status: $e");
-                    } finally {
-                      if (mounted) setState(() => _isLoading = false);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF008996),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
-                  ),
-                  child: _isLoading 
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : Text(
-                        widget.complaint.status == ComplaintStatus.repairing ? "Selesaikan" : "Perbaiki", 
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+            // --- LOGIKA TOMBOL PERSETUJUAN APPROVAL ---
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance.collection('complaints').doc(widget.complaint.id).snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const SizedBox.shrink();
+                
+                String statusStr = snapshot.data!.get('status');
+
+                // Jika teknisi sudah kirim bukti, maka tombol muncul di sisi Approval
+                if (statusStr == 'waitingApproval') {
+                  return Row(
+                    children: [
+                      // Tombol Tolak (Kembalikan ke Dalam Perbaikan)
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _isLoading ? null : () async {
+                            setState(() => _isLoading = true);
+                            await FirebaseFirestore.instance.collection('complaints').doc(widget.complaint.id).update({
+                              'status': 'repairing',
+                              'rejectReason': 'Bukti kurang jelas atau perbaikan belum selesai'
+                            });
+                            if (mounted) Navigator.pop(context);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.red),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                          ),
+                          child: const Text("Tolak", style: TextStyle(color: Colors.red)),
+                        ),
                       ),
-                ),
-              )
+                      const SizedBox(width: 12),
+                      // Tombol Setuju (Status jadi Selesai/Resolved)
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : () async {
+                            setState(() => _isLoading = true);
+                            // Menggunakan fungsi resolveComplaint yang sudah ada di DatabaseService
+                            await db.resolveComplaint(widget.complaint.id, "Selesai", widget.complaint.roomId);
+                            if (mounted) Navigator.pop(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF008996),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                          ),
+                          child: const Text("Setujui", style: TextStyle(color: Colors.white)),
+                        ),
+                      ),
+                    ],
+                  );
+                } else if (statusStr == 'repairing') {
+                  return const Center(child: Text("Teknisi sedang melakukan perbaikan...", style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)));
+                } else if (statusStr == 'resolved') {
+                  return const Center(child: Text("Pengaduan Selesai", style: TextStyle(color: Color(0xFF008996), fontWeight: FontWeight.bold)));
+                } else {
+                  return const Center(child: Text("Menunggu teknisi mengambil tindakan", style: TextStyle(fontSize: 11, color: Colors.grey)));
+                }
+              },
+            ),
           ],
         ),
       ),

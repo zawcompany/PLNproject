@@ -4,20 +4,31 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  // Mendengarkan perubahan status login
   Stream<User?> get user => _auth.authStateChanges();
 
-  // Login dan ambil data role dari Firestore
+  // 1. Ambil data role dari Firestore
   Future<String?> getRole(String uid) async {
     try {
       DocumentSnapshot doc = await _db.collection('users').doc(uid).get();
-      return doc.exists ? doc['role'] as String? : null;
+      if (doc.exists && doc.data() != null) {
+        return doc['role'] as String?;
+      }
+      return null;
     } catch (e) {
       return null;
     }
   }
 
-  // Registrasi Karyawan
-  Future<void> registerKaryawan(String email, String password, String name) async {
+  // 2. Registrasi User dengan Role Dinamis
+  // Mengganti registerKaryawan menjadi registerUser agar bisa menerima berbagai role
+  Future<void> registerUser({
+    required String email,
+    required String password,
+    required String name,
+    required String role, 
+  }) async {
     try {
       UserCredential res = await _auth.createUserWithEmailAndPassword(
         email: email.trim(), 
@@ -28,7 +39,7 @@ class AuthService {
         'uid': res.user!.uid,
         'name': name,
         'email': email.trim(),
-        'role': 'karyawan',
+        'role': role, 
         'createdAt': FieldValue.serverTimestamp(), 
       });
     } catch (e) {
@@ -36,10 +47,22 @@ class AuthService {
     }
   }
 
-  // Fungsi Reset Password (Lupa Password)
+  // Fungsi Login (Tambahan agar lebih rapi)
+  Future<UserCredential> signIn(String email, String password) async {
+    try {
+      return await _auth.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Fungsi Reset Password
   Future<void> resetPassword(String email) async {
     try {
-      await _auth.setLanguageCode("id");
+      await _auth.setLanguageCode("id"); 
       await _auth.sendPasswordResetEmail(email: email.trim());
     } on FirebaseAuthException catch (e) {
       throw e.message ?? "Terjadi kesalahan saat mengirim email reset.";

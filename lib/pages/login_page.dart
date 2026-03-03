@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// import '../../services/database_service.dart';
-// import '../../data/exsistingdata.dart';
+import '../../models/user_session.dart'; // Tambahkan import ini
 import 'lupa_pw_page.dart';
 import 'regis_page.dart';
 
@@ -15,7 +14,6 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-
   // state
   bool _obscureText = true;
   bool _isLoading = false;
@@ -40,9 +38,6 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text.trim(),
       );
 
-      // final db = DatabaseService();
-      // await db.seedDataAndInitialComplaints(LocalData.items);
-
       String uid = userCredential.user!.uid;
 
       // ambil data role dari firestore
@@ -54,23 +49,35 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       String role = userDoc['role'];
+      String name = userDoc['name'] ?? "User";
+
+      // Update Session
+      UserSession.role = role;
+      UserSession.userName = name;
 
       if (!mounted) return;
 
-      // navigasi berdasarkan role
+      // Logika navigasi yang mencakup semua role baru
       if (role == "approval") {
         Navigator.pushNamedAndRemoveUntil(context, '/approval_dash', (route) => false);
-      } else if (role == "karyawan") {
+      } 
+      // Cek apakah role mengandung kata 'teknisi' ATAU sama dengan 'karyawan'
+      else if (role == "karyawan" || role.contains("teknisi")) {
         Navigator.pushNamedAndRemoveUntil(context, '/staff_dash', (route) => false);
-      } else {
-        _showSnackBar("Role akun tidak dikenali. Hubungi Admin.", Colors.red);
+      } 
+      else {
+        _showSnackBar("Role akun ($role) belum didaftarkan di navigasi.", Colors.red);
       }
 
     } on FirebaseAuthException catch (e) {
       String errorMsg = "Terjadi kesalahan login";
-      if (e.code == 'user-not-found') errorMsg = "Email tidak terdaftar";
-      else if (e.code == 'wrong-password') errorMsg = "Password salah";
-      else if (e.code == 'invalid-email') errorMsg = "Format email salah";
+      if (e.code == 'user-not-found') {
+        errorMsg = "Email tidak terdaftar";
+      } else if (e.code == 'wrong-password') {
+        errorMsg = "Password salah";
+      } else if (e.code == 'invalid-email') {
+        errorMsg = "Format email salah";
+      }
 
       _showSnackBar(errorMsg, Colors.redAccent);
     } catch (e) {
@@ -108,7 +115,6 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-
           // ilustrasi atas
           Positioned(
             top: size.height * 0.05,
@@ -136,7 +142,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08), // Perbaikan .withValues
                     blurRadius: 20,
                     offset: const Offset(0, -5),
                   ),
@@ -147,7 +153,6 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     // title
                     const Text(
                       "Masuk",
@@ -164,7 +169,6 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 35),
 
-                    // input email
                     _buildLabel("Email"),
                     _buildTextField(
                       controller: _emailController,
@@ -174,7 +178,6 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 20),
 
-                    // input password
                     _buildLabel("Password"),
                     _buildTextField(
                       controller: _passwordController,
@@ -183,7 +186,6 @@ class _LoginPageState extends State<LoginPage> {
                       isPassword: true,
                     ),
 
-                    // lupa password
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
@@ -202,7 +204,6 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 20),
 
-                    // tombol masuk
                     SizedBox(
                       width: double.infinity,
                       height: 56,
@@ -235,7 +236,6 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 25),
 
-                    // redirect ke register
                     Center(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -271,7 +271,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // label field
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
@@ -283,7 +282,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // textfield reusable
   Widget _buildTextField({
     required TextEditingController controller,
     required String hintText,

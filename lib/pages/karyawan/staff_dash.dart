@@ -50,7 +50,7 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
                       side: const BorderSide(color: Color(0xFF008996)),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text("Siswa Pembelajaran", style: TextStyle(color: Color(0xFF008996))),
+                    child: const Text("Siswa", style: TextStyle(color: Color(0xFF008996))),
                   ),
                 ),
                 const SizedBox(width: 10),

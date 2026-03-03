@@ -11,7 +11,6 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-
   // controller
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -19,14 +18,14 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _confirmController = TextEditingController();
 
   // state
-  String _selectedRole = 'karyawan';
+  // Role default diatur ke 'karyawan'
+  String _selectedRole = 'karyawan'; 
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
 
   // fungsi registrasi
   Future<void> registerUser() async {
-
     // validasi field kosong
     if (_nameController.text.trim().isEmpty ||
         _emailController.text.trim().isEmpty ||
@@ -61,23 +60,18 @@ class _RegisterPageState extends State<RegisterPage> {
 
       // simpan profil ke firestore
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'uid': uid,
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
-        'role': _selectedRole,
+        'role': _selectedRole, 
         'createdAt': FieldValue.serverTimestamp(),
       });
 
       if (!mounted) return;
 
-      // navigasi setelah register
+      // Navigasi setelah register ke dashboard staff karena pilihan role saat ini bersifat operasional
       Navigator.pushNamedAndRemoveUntil(
           context, '/staff_dash', (route) => false);
-
-      // if (_selectedRole == 'approval') {
-      //   Navigator.pushNamedAndRemoveUntil(context, '/approval_dash', (route) => false);
-      // } else {
-      //   Navigator.pushNamedAndRemoveUntil(context, '/staff_dash', (route) => false);
-      // }
 
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
@@ -118,7 +112,6 @@ class _RegisterPageState extends State<RegisterPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-
           // ilustrasi atas
           Positioned(
             top: size.height * 0.05,
@@ -127,7 +120,7 @@ class _RegisterPageState extends State<RegisterPage> {
             child: SvgPicture.asset(
               "lib/assets/images/welcome_pict.svg",
               width: size.width,
-              height: size.height * 0.3,
+              height: size.height * 0.25,
               fit: BoxFit.contain,
             ),
           ),
@@ -136,7 +129,7 @@ class _RegisterPageState extends State<RegisterPage> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              height: size.height * 0.73,
+              height: size.height * 0.75, // Menyesuaikan tinggi agar muat dengan dropdown baru
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -157,7 +150,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     // title
                     const Text(
                       "Daftar",
@@ -170,10 +162,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     const SizedBox(height: 5),
                     const Text(
                       "Silakan lengkapi data diri Anda.",
-                      style: TextStyle(
-                          fontSize: 14, color: Colors.black54),
+                      style: TextStyle(fontSize: 14, color: Colors.black54),
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 25),
 
                     // input nama
                     _labelField("Nama Lengkap"),
@@ -181,7 +172,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         prefixIcon: Icons.person_outline,
                         controller: _nameController),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
 
                     // input email
                     _labelField("Email"),
@@ -189,7 +180,13 @@ class _RegisterPageState extends State<RegisterPage> {
                         prefixIcon: Icons.email_outlined,
                         controller: _emailController),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
+
+                    // Dropdown Role Baru
+                    _labelField("Pilih Peran/Role"),
+                    _buildRoleDropdown(),
+
+                    const SizedBox(height: 14),
 
                     // input password
                     _labelField("Password"),
@@ -198,7 +195,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         controller: _passwordController,
                         isPassword: true),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
 
                     // input konfirmasi password
                     _labelField("Konfirmasi Password"),
@@ -218,12 +215,10 @@ class _RegisterPageState extends State<RegisterPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryTeal,
                           shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(14)),
+                              borderRadius: BorderRadius.circular(14)),
                           elevation: 0,
                         ),
-                        onPressed:
-                            _isLoading ? null : registerUser,
+                        onPressed: _isLoading ? null : registerUser,
                         child: _isLoading
                             ? const SizedBox(
                                 height: 20,
@@ -248,24 +243,20 @@ class _RegisterPageState extends State<RegisterPage> {
                     // redirect ke login
                     Center(
                       child: Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text(
                             "Sudah punya akun? ",
-                            style:
-                                TextStyle(color: Colors.grey),
+                            style: TextStyle(color: Colors.grey),
                           ),
                           GestureDetector(
-                            onTap: () =>
-                                Navigator.pushReplacementNamed(
-                                    context, '/login'),
+                            onTap: () => Navigator.pushReplacementNamed(
+                                context, '/login'),
                             child: const Text(
                               "Masuk",
                               style: TextStyle(
                                   color: primaryTeal,
-                                  fontWeight:
-                                      FontWeight.bold),
+                                  fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
@@ -283,7 +274,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   // label field
   Widget _labelField(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.only(bottom: 6),
         child: Text(
           text,
           style: const TextStyle(
@@ -293,7 +284,7 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       );
 
-  // dropdown role
+  // dropdown role diperbarui sesuai instruksi
   Widget _buildRoleDropdown() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -312,14 +303,13 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
           items: const [
             DropdownMenuItem(
-                value: 'karyawan',
-                child: Text("Karyawan")),
+                value: 'karyawan', child: Text("Karyawan (Staff)")),
             DropdownMenuItem(
-                value: 'approval',
-                child: Text("Approval")),
+                value: 'teknisi_kelistrikan', child: Text("Staff Teknisi Kelistrikan")),
+            DropdownMenuItem(
+                value: 'teknisi_lapangan', child: Text("Staff Teknisi Lapangan")),
           ],
-          onChanged: (val) =>
-              setState(() => _selectedRole = val!),
+          onChanged: (val) => setState(() => _selectedRole = val!),
         ),
       ),
     );
@@ -341,20 +331,15 @@ class _RegisterPageState extends State<RegisterPage> {
       child: TextField(
         controller: controller,
         obscureText: isPassword
-            ? (isConfirm
-                ? _obscureConfirm
-                : _obscurePassword)
+            ? (isConfirm ? _obscureConfirm : _obscurePassword)
             : false,
         decoration: InputDecoration(
           border: InputBorder.none,
-          prefixIcon:
-              Icon(prefixIcon, color: Colors.grey, size: 20),
+          prefixIcon: Icon(prefixIcon, color: Colors.grey, size: 20),
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
-                    (isConfirm
-                            ? _obscureConfirm
-                            : _obscurePassword)
+                    (isConfirm ? _obscureConfirm : _obscurePassword)
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
                     color: Colors.grey,
@@ -362,17 +347,14 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   onPressed: () => setState(() {
                     if (isConfirm) {
-                      _obscureConfirm =
-                          !_obscureConfirm;
+                      _obscureConfirm = !_obscureConfirm;
                     } else {
-                      _obscurePassword =
-                          !_obscurePassword;
+                      _obscurePassword = !_obscurePassword;
                     }
                   }),
                 )
               : null,
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
       ),
     );

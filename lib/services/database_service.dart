@@ -151,4 +151,21 @@ class DatabaseService {
       }
     }
   }
+
+  Future<void> teknisiSelesaikanPerbaikan(String complaintId, String imageUrl) async {
+    await _db.collection('complaints').doc(complaintId).update({
+      'status': 'waitingApproval', 
+      'completionProof': imageUrl,   
+    });
+  }
+
+  Future<void> approvalValidasiPerbaikan(String complaintId, bool isValid, String itemId, String roomName) async {
+    if (isValid) {
+      await resolveComplaint(complaintId, itemId, roomName);
+    } else {
+      await _db.collection('complaints').doc(complaintId).update({
+        'status': ComplaintStatus.repairing.name,
+      });
+    }
+  }
 }

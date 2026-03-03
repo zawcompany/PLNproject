@@ -1,4 +1,9 @@
-enum ComplaintStatus { pending, repairing, resolved }
+enum ComplaintStatus { 
+  pending, 
+  repairing, 
+  waitingApproval, 
+  resolved 
+}
 
 class ComplaintModel {
   final String id;
@@ -9,6 +14,11 @@ class ComplaintModel {
   final String? imageProof;
   ComplaintStatus status;
   final DateTime createdAt;
+  String? technicianId;        
+  String? evidenceImagePath;   
+  String? technicianNote;      
+  String? rejectionReason;
+  String? category; 
 
   ComplaintModel({
     required this.id,
@@ -19,6 +29,11 @@ class ComplaintModel {
     this.imageProof,
     this.status = ComplaintStatus.pending,
     required this.createdAt,
+    this.technicianId,
+    this.evidenceImagePath,
+    this.technicianNote,
+    this.rejectionReason,
+    this.category,
   });
 
   Map<String, dynamic> toMap() {
@@ -31,6 +46,11 @@ class ComplaintModel {
       'imageProof': imageProof,
       'status': status.name,
       'createdAt': createdAt.toIso8601String(),
+      'technicianId': technicianId,
+      'evidenceImagePath': evidenceImagePath,
+      'technicianNote': technicianNote,
+      'rejectionReason': rejectionReason,
+      'category': category,
     };
   }
 
@@ -42,8 +62,16 @@ class ComplaintModel {
       userId: map['userId'] ?? '',
       description: map['description'] ?? '',
       imageProof: map['imageProof'],
-      status: ComplaintStatus.values.firstWhere((e) => e.name == map['status']),
-      createdAt: DateTime.parse(map['createdAt']),
+      status: ComplaintStatus.values.firstWhere(
+        (e) => e.name == map['status'],
+        orElse: () => ComplaintStatus.pending, 
+      ),
+      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
+      technicianId: map['technicianId'],
+      evidenceImagePath: map['evidenceImagePath'],
+      technicianNote: map['technicianNote'],
+      rejectionReason: map['rejectionReason'],
+      category: map['category'] ?? 'lapangan',
     );
   }
-}
+} 

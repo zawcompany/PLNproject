@@ -50,13 +50,18 @@ class _ComplaintDialogState extends State<ComplaintDialog> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
-      // gabungkan deskripsi
+      // --- LOGIKA PENENTUAN TEKNISI ---
+      // Cek apakah ada salah satu issue yang mengandung kata "Kelistrikan"
+      bool hasElectrical = selectedIssues.any((issue) => issue.startsWith("Kelistrikan:"));
+      String assignedCategory = hasElectrical ? "listrik" : "lapangan";
+
+      // Gabungkan deskripsi
       String finalDescription = "Kategori: ${selectedIssues.join(", ")}";
       if (otherIssueController.text.isNotEmpty) {
         finalDescription += ". Catatan Tambahan: ${otherIssueController.text}";
       }
 
-      // buat object complaint
+      // Buat object complaint dengan category baru
       final complaint = ComplaintModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         roomId: widget.room.id,
@@ -65,14 +70,14 @@ class _ComplaintDialogState extends State<ComplaintDialog> {
         description: finalDescription,
         createdAt: DateTime.now(),
         status: ComplaintStatus.pending,
+        category: assignedCategory, // Masukkan kategori di sini
       );
 
-      // simpan ke firestore
+      // Simpan ke firestore
       await _db.createComplaint(complaint, widget.itemId);
 
       if (!mounted) return;
-
-      // kirim balik ke halaman pemanggil
+      
       widget.onSubmitted(
         RoomCondition.perluPerbaikan, 
         selectedIssues, 

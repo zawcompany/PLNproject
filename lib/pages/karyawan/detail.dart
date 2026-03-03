@@ -74,7 +74,7 @@ class _DetailKelasPageState extends State<DetailKelasPage> {
                       )
                     );
                   },
-                  child: const Text("Siswa Pembelajaran"),
+                  child: const Text("Siswa"),
                 ),
               ),
               const SizedBox(width: 10),
