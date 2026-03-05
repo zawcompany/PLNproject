@@ -33,7 +33,7 @@ class UserModel {
       case 'approval': return UserRole.approval;
       case 'teknisi_kelistrikan': return UserRole.teknisiKelistrikan;
       case 'teknisi_lapangan': return UserRole.teknisiLapangan;
-      case 'karyawan': return UserRole.karyawan; // Tambahkan ini agar sinkron dengan dropdown
+      case 'karyawan': return UserRole.karyawan;
       case 'staff_biasa': return UserRole.staffBiasa;
       default: return UserRole.karyawan;
     }

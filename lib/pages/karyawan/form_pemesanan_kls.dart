@@ -93,6 +93,7 @@ class _FormKelasPageState extends State<FormKelasPage> {
           nip: nipController.text.trim(),
           guestCount: int.tryParse(tamuController.text) ?? 0,
           userType: 'internal',
+          createdAt: DateTime.now(),
         );
 
         await _db.createBooking(newBooking, widget.item.id);

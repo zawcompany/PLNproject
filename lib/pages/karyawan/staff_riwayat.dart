@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:image_picker/image_picker.dart'; // Pastikan ImagePicker terimport dengan benar
+import 'package:image_picker/image_picker.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:monitoring_app/widgets/navbar.dart';
 import '../../models/booking_model.dart';
@@ -21,7 +21,6 @@ class RiwayatPage extends StatefulWidget {
 
 class _RiwayatPageState extends State<RiwayatPage> {
   final Color primaryColor = const Color(0xFF008996);
-  // Menghapus field _dbService yang tidak digunakan
 
   List<String> selectedWisma = ["Semua"];
   List<String> selectedKelas = ["Semua"];
@@ -46,7 +45,8 @@ class _RiwayatPageState extends State<RiwayatPage> {
                   style: TextStyle(color: primaryColor, fontSize: 16, fontWeight: FontWeight.bold)),
               content: SingleChildScrollView(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildFilterLabel("Pilih Wisma"),
                     _buildChips(["Semua", "Anggrek", "Cempaka", "Bougenville", "Dahlia", "Edelweiss", "Flamboyan", "Gladiol", "Hortensia", "Toddopuli"], selectedWisma, setDialogState),
@@ -95,12 +95,8 @@ class _RiwayatPageState extends State<RiwayatPage> {
       bottomNavigationBar: CustomBottomNav(
         currentIndex: 1,
         onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/staff_dash'); // Memperbaiki blok if
-          }
-          if (index == 2) {
-            Navigator.pushReplacementNamed(context, '/profil'); // Memperbaiki blok if
-          }
+          if (index == 0) Navigator.pushReplacementNamed(context, '/staff_dash');
+          if (index == 2) Navigator.pushReplacementNamed(context, '/profil');
         },
       ),
     );
@@ -216,19 +212,44 @@ class _RiwayatPageState extends State<RiwayatPage> {
   }
 
   Widget _buildBookingCard(BookingModel booking) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column( crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row( mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(booking.itemName.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              Text(DateFormat('dd MMM yyyy').format(booking.start), style: const TextStyle(color: Colors.grey, fontSize: 10)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _buildStatusBadge(booking.status.name, isBooking: true),
-        ],
+    // LOGIKA PARSING NOMOR KAMAR
+    String itemName = booking.itemName.replaceAll('_', ' ').toUpperCase();
+    String roomNumbers = booking.roomIds.map((id) {
+      String cleanedId = id.replaceAll('_', ' ').toUpperCase();
+      cleanedId = cleanedId
+          .replaceAll('WISMA', '')
+          .replaceAll(itemName.replaceAll('WISMA', '').trim(), '')
+          .trim();
+      return cleanedId;
+    }).where((s) => s.isNotEmpty).join(', ');
+
+    String displayTitle = roomNumbers.isEmpty ? itemName : "$itemName $roomNumbers";
+
+    return InkWell(
+      onTap: () {
+        showDialog(context: context, builder: (context) => DialogTinjauPemesananStaff(booking: booking));
+      },
+      borderRadius: BorderRadius.circular(15),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column( crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row( mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    displayTitle, 
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text(DateFormat('dd MMM yyyy').format(booking.start), style: const TextStyle(color: Colors.grey, fontSize: 10)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildStatusBadge(booking.status.name, isBooking: true),
+          ],
+        ),
       ),
     );
   }
@@ -274,7 +295,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
       switch (status) {
         case 'pending': label = "MENUNGGU"; color = Colors.orange; break;
         case 'approved': label = "DITERIMA"; color = const Color(0xFF008996); break;
-        case 'rejected': label = "DITOLAK"; color = Colors.red; break;
+        case 'rejected': label = "DIALIHKAN/DITOLAK"; color = Colors.red; break;
         default: label = status.toUpperCase();
       }
     } else {
@@ -316,6 +337,90 @@ class _RiwayatPageState extends State<RiwayatPage> {
   }
 }
 
+class DialogTinjauPemesananStaff extends StatelessWidget {
+  final BookingModel booking;
+  const DialogTinjauPemesananStaff({super.key, required this.booking});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance.collection('bookings').doc(booking.id).get(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()));
+          
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          final List? redirectedRooms = data['redirectedTo'];
+
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  const Text("Detail Pemesanan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, size: 20)),
+                ]),
+                const Divider(height: 30),
+                
+                if (booking.status == BookingStatus.rejected) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("STATUS: DIALIHKAN / DITOLAK", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
+                        const SizedBox(height: 4),
+                        Text(booking.rejectReason ?? "Tidak ada alasan spesifik.", style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic)),
+                        if (redirectedRooms != null && redirectedRooms.isNotEmpty) ...[
+                          const Divider(height: 20),
+                          const Text("Kamar Pengganti Anda:", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF008996))),
+                          const SizedBox(height: 4),
+                          Text(
+                            redirectedRooms.join(", ").replaceAll('_', ' ').toUpperCase(),
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                        ]
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+
+                _infoRow("Item", booking.itemName.replaceAll('_', ' ').toUpperCase()),
+                _infoRow("Tanggal Mulai", DateFormat('dd MMM yyyy').format(booking.start)),
+                _infoRow("Status", booking.status.name.toUpperCase()),
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _infoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+}
+
 class DialogTinjauPengaduanStaff extends StatefulWidget {
   final ComplaintModel complaint;
   const DialogTinjauPengaduanStaff({super.key, required this.complaint});
@@ -326,7 +431,7 @@ class DialogTinjauPengaduanStaff extends StatefulWidget {
 
 class _DialogTinjauPengaduanStaffState extends State<DialogTinjauPengaduanStaff> {
   final DatabaseService db = DatabaseService();
-  final ImagePicker _picker = ImagePicker(); // Inisialisasi ImagePicker
+  final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
 
   Future<void> _processUpload(List<File> files) async {
@@ -394,7 +499,7 @@ class _DialogTinjauPengaduanStaffState extends State<DialogTinjauPengaduanStaff>
                     child: selectedFiles.isEmpty
                         ? InkWell(
                             onTap: () async {
-                              final List<XFile> images = await _picker.pickMultiImage(imageQuality: 50); // Memperbaiki pemanggilan ImagePicker & tipe XFile
+                              final List<XFile> images = await _picker.pickMultiImage(imageQuality: 50);
                               if (images.isNotEmpty) {
                                 setDialogState(() => selectedFiles.addAll(images.map((e) => File(e.path))));
                               }

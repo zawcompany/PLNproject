@@ -302,22 +302,7 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Mohon unggah Bukti Pembayaran!")));
       return;
     }
-    final int totalTamu = (int.tryParse(perempuanController.text) ?? 0) + (int.tryParse(lakiController.text) ?? 0);
-    int totalKapasitasDipilih = 0;
-    for (var r in selectedRooms) {
-      totalKapasitasDipilih += r.name.toLowerCase().contains("hortensia") ? 5 : 4;
-    }
 
-    if (totalKapasitasDipilih < totalTamu) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Kapasitas kamar ($totalKapasitasDipilih) tidak cukup untuk $totalTamu tamu. Mohon tambah kamar!"),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-    // Validasi form
     if (_formKey.currentState!.validate()) {
       setState(() => _isSubmitting = true);
       try {
@@ -348,6 +333,7 @@ class _FormWismaGeneralEksternalState extends State<FormWismaGeneralEksternal> {
             npwp: npwpController.text.trim(),
             femaleCount: int.tryParse(perempuanController.text) ?? 0,
             maleCount: int.tryParse(lakiController.text) ?? 0,
+            createdAt: DateTime.now(), 
           );
 
           final parent = allItems.firstWhere((item) => item.rooms.any((r) => r.id == room.id));

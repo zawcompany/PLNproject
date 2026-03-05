@@ -25,57 +25,84 @@ class _DashboardAlternativeState extends State<DashboardAlternative> {
   void _showBookingTypeDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text("Jenis Pesanan", 
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        content: const Text("Silahkan pilih kategori pemesanan untuk wisma:"),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.pop(context); 
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const FormWismaGeneralInternal(),
-                        ),
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF008996)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text("Siswa", style: TextStyle(color: Color(0xFF008996))),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Container(
+          // Memperlebar dialog secara horizontal
+          width: MediaQuery.of(context).size.width * 0.9, 
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Garis handle kecil di atas agar terlihat seperti modal kekinian
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "Pilih Kategori Tamu",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold, 
+                  fontSize: 18,
+                  color: primaryTeal
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Tentukan jenis wisma sesuai kebutuhan Anda",
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 28),
+              
+              // Tombol Siswa (Internal) - Dibuat Full Width & Lebih Tinggi
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context); 
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const FormWismaGeneralInternal()));
+                  },
+                  // icon: const Icon(Icons.school_outlined, size: 20),
+                  label: const Text("Siswa Pembelajaran", style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: primaryTeal,
+                    side: const BorderSide(color: primaryTeal, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const FormWismaGeneralEksternal(),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF008996),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text("Beyond KwH", style: TextStyle(color: Colors.white)),
+              ),
+              
+              const SizedBox(height: 12),
+              
+              // Tombol Beyond KwH (Eksternal) - Dibuat Full Width & Lebih Tinggi
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const FormWismaGeneralEksternal()));
+                  },
+                  // icon: const Icon(Icons.public_outlined, color: Colors.white, size: 20),
+                  label: const Text("Beyond KwH", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryTeal,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                   ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 10), 
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

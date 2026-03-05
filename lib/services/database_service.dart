@@ -110,13 +110,63 @@ class DatabaseService {
     });
   }
 
-  Future<void> rejectBooking(String bookingId, String reason, String itemId, List<String> roomIds) async {
-    await _db.collection('bookings').doc(bookingId).update({
+  Future<void> rejectBookingWithRedirect(
+    BookingModel oldBooking, 
+    String reason, 
+    List<String> newRoomIds,
+    String newItemName // Nama wisma/kelas yang baru
+    ) async {
+    
+    // 1. Update booking lama menjadi REJECTED
+    await _db.collection('bookings').doc(oldBooking.id).update({
       'status': BookingStatus.rejected.name,
       'rejectReason': reason,
+      'isRead': false,
     });
-    await updateRoomConditionByIds(itemId, roomIds, RoomCondition.kosong);
+
+    // 2. Buat booking baru sebagai PENGALIHAN (Otomatis Approved)
+    String newBookingId = "RE- ${DateTime.now().millisecondsSinceEpoch}";
+    BookingModel redirectedBooking = BookingModel(
+      id: newBookingId,
+      userId: oldBooking.userId,
+      userName: oldBooking.userName,
+      itemName: newItemName, // Wisma yang dipilih admin
+      roomIds: newRoomIds,    // Kamar tunggal yang dipilih admin
+      start: oldBooking.start,
+      end: oldBooking.end,
+      totalPayment: oldBooking.totalPayment, // Harga tetap sama sesuai permintaan
+      status: BookingStatus.approved, // Langsung disetujui
+      createdAt: DateTime.now(),
+    );
+
+    // Simpan booking baru ke Firestore
+    await _db.collection('bookings').doc(newBookingId).set(redirectedBooking.toMap());
+
+    // 3. Update Kondisi Kamar di koleksi 'items'
+    final itemsSnapshot = await _db.collection('items').get();
+    for (var doc in itemsSnapshot.docs) {
+      List rooms = List.from(doc.data()['rooms'] ?? []);
+      bool isChanged = false;
+
+      for (var room in rooms) {
+        // Kosongkan kamar lama
+        if (oldBooking.roomIds.contains(room['id'])) {
+          room['condition'] = RoomCondition.kosong.name;
+          isChanged = true;
+        }
+        // Isi kamar baru
+        if (newRoomIds.contains(room['id'])) {
+          room['condition'] = RoomCondition.terisi.name;
+          isChanged = true;
+        }
+      }
+
+      if (isChanged) {
+        await doc.reference.update({'rooms': rooms});
+      }
+    }
   }
+
   //MANAJEMEN COMPLAINT (PENGADUAN)
   Future<void> createComplaint(ComplaintModel complaint, String itemId) async {
     await _db.collection('complaints').doc(complaint.id).set(complaint.toMap());

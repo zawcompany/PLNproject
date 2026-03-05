@@ -150,6 +150,7 @@ class _FormWismaInternalPageState extends State<FormWismaInternalPage> {
           maleCount: int.tryParse(lakiController.text) ?? 0,
           femaleCount: int.tryParse(perempuanController.text) ?? 0,
           userType: 'internal',
+          createdAt: DateTime.now(),
         );
 
         await _db.createBooking(newBooking, widget.item.id);

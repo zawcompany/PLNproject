@@ -23,7 +23,7 @@ class BookingModel {
   final int? guestCount;
   final String? userType;
   final bool isRead;
-
+  final DateTime createdAt; 
   BookingModel({
     required this.id,
     required this.userId,
@@ -47,6 +47,7 @@ class BookingModel {
     this.guestCount,
     this.userType,
     this.isRead = true,
+    required this.createdAt, 
   });
 
   Map<String, dynamic> toMap() {
@@ -73,6 +74,7 @@ class BookingModel {
       'guest_count': guestCount,
       'user_type': userType,
       'isRead': isRead,
+      'createdAt': createdAt.toIso8601String(), 
     };
   }
 
@@ -103,6 +105,9 @@ class BookingModel {
       guestCount: map['guest_count'],
       userType: map['user_type'],
       isRead: map['isRead'] ?? true,
+      createdAt: map['createdAt'] != null 
+          ? DateTime.parse(map['createdAt']) 
+          : DateTime.now(),
     );
   }
 }

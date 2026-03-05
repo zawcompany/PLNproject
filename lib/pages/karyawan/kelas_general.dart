@@ -249,6 +249,7 @@ class _FormKelasGeneralState extends State<FormKelasGeneral> {
             nik: nikController.text.trim(),
             nip: nipController.text.trim(),
             guestCount: totalTamu,
+            createdAt: DateTime.now(),
           );
           
           final parent = allItems.firstWhere((item) => item.rooms.any((r) => r.id == room.id));

@@ -37,6 +37,30 @@ class ItemModel {
     this.priceMonth = 0,
   });
 
+  ItemModel copyWith({
+    String? id,
+    String? title,
+    String? description,
+    String? imagePath,
+    ItemType? type,
+    bool? isDone,
+    List<RoomModel>? rooms,
+    int? priceDay,
+    int? priceMonth,
+  }) {
+    return ItemModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      imagePath: imagePath ?? this.imagePath,
+      type: type ?? this.type,
+      isDone: isDone ?? this.isDone,
+      rooms: rooms ?? this.rooms,
+      priceDay: priceDay ?? this.priceDay,
+      priceMonth: priceMonth ?? this.priceMonth,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id, 
@@ -65,12 +89,15 @@ class ItemModel {
       rooms: map['rooms'] != null
           ? (map['rooms'] as List).map((x) => RoomModel.fromMap(x)).toList()
           : [],
-      priceDay: (map['priceDay'] is int) 
-          ? map['priceDay'] 
-          : int.tryParse(map['priceDay']?.toString() ?? '0') ?? 0,
-      priceMonth: (map['priceMonth'] is int) 
-          ? map['priceMonth'] 
-          : int.tryParse(map['priceMonth']?.toString() ?? '0') ?? 0,
+      priceDay: _toInt(map['priceDay']),
+      priceMonth: _toInt(map['priceMonth']),
     );
+  }
+
+  static int _toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    return int.tryParse(value.toString()) ?? 0;
   }
 }

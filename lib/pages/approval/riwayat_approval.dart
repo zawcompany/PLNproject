@@ -9,6 +9,7 @@ import '../../models/complaint_model.dart';
 import '../../models/room_model.dart';
 import '../../services/database_service.dart';
 import '../../widgets/navbar.dart';
+import '../../models/item_model.dart';
 
 class RiwayatApprovalPage extends StatefulWidget {
   const RiwayatApprovalPage({super.key});
@@ -89,6 +90,7 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
 
   Future<void> _deleteSelectedItems() async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
 
     bool confirm = await showDialog(
       context: context,
@@ -231,46 +233,45 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
         final listKeywordsKelas = ["Kelas A", "Kelas B", "Lab B", "Aula", "Kelas Toddopuli"];
 
         allItems = allItems.where((item) {
-        String name = (item is BookingModel) ? item.itemName : (item as ComplaintModel).roomName;
-        String status = (item is BookingModel) ? item.status.name : (item as ComplaintModel).status.name;
+          String name = (item is BookingModel) ? item.itemName : (item as ComplaintModel).roomName;
+          String status = (item is BookingModel) ? item.status.name : (item as ComplaintModel).status.name;
 
-        bool matchesWisma = false;
-        if (selectedWisma.isEmpty) {
-          matchesWisma = false; 
-        } else if (selectedWisma.contains("Semua")) {
-          matchesWisma = !listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
-        } else {
-          matchesWisma = selectedWisma.any((w) => name.toLowerCase().contains(w.toLowerCase()));
-        }
-
-        bool matchesKelas = false;
-        if (selectedKelas.isEmpty) {
-          matchesKelas = false; 
-        } else if (selectedKelas.contains("Semua")) {
-          matchesKelas = listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
-        } else {
-          matchesKelas = selectedKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
-        }
-
-        bool categoryMatch = matchesWisma || matchesKelas;
-
-        bool statusMatch = false;
-        if (selectedStatus.contains("Semua") || selectedStatus.isEmpty) {
-          statusMatch = true;
-        } else {
-          if (selectedRiwayatType == "Pemesanan") {
-            if (selectedStatus.contains("Menunggu Persetujuan") && status == 'pending') statusMatch = true;
-            if (selectedStatus.contains("Diterima") && status == 'approved') statusMatch = true;
-            if (selectedStatus.contains("Ditolak") && status == 'rejected') statusMatch = true;
+          bool matchesWisma = false;
+          if (selectedWisma.isEmpty) {
+            matchesWisma = false; 
+          } else if (selectedWisma.contains("Semua")) {
+            matchesWisma = !listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
           } else {
-            if (selectedStatus.contains("Perlu Perbaikan") && status == 'pending') statusMatch = true;
-            if (selectedStatus.contains("Dalam Perbaikan") && status == 'repairing') statusMatch = true;
-            if (selectedStatus.contains("Selesai") && status == 'resolved') statusMatch = true;
+            matchesWisma = selectedWisma.any((w) => name.toLowerCase().contains(w.toLowerCase()));
           }
-        }
 
-        return categoryMatch && statusMatch;
-      }).toList();
+          bool matchesKelas = false;
+          if (selectedKelas.isEmpty) {
+            matchesKelas = false; 
+          } else if (selectedKelas.contains("Semua")) {
+            matchesKelas = listKeywordsKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
+          } else {
+            matchesKelas = selectedKelas.any((k) => name.toLowerCase().contains(k.toLowerCase()));
+          }
+
+          bool categoryMatch = matchesWisma || matchesKelas;
+
+          bool statusMatch = false;
+          if (selectedStatus.contains("Semua") || selectedStatus.isEmpty) {
+            statusMatch = true;
+          } else {
+            if (selectedRiwayatType == "Pemesanan") {
+              if (selectedStatus.contains("Menunggu Persetujuan") && status == 'pending') statusMatch = true;
+              if (selectedStatus.contains("Diterima") && status == 'approved') statusMatch = true;
+              if (selectedStatus.contains("Ditolak") && status == 'rejected') statusMatch = true;
+            } else {
+              if (selectedStatus.contains("Perlu Perbaikan") && status == 'pending') statusMatch = true;
+              if (selectedStatus.contains("Dalam Perbaikan") && status == 'repairing') statusMatch = true;
+              if (selectedStatus.contains("Selesai") && status == 'resolved') statusMatch = true;
+            }
+          }
+          return categoryMatch && statusMatch;
+        }).toList();
 
         allItems.sort((a, b) {
           int priorityA = getStatusPriority(a);
@@ -338,21 +339,14 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
   }
 
   Widget _buildBookingCard(BookingModel booking) {
-    // 1. Bersihkan nama item (Contoh: Wisma_Gladiol -> WISMA GLADIOL)
     String itemName = booking.itemName.replaceAll('_', ' ').toUpperCase();
-
-    // 2. Ambil list nomor kamar saja dari Room IDs
     String roomNumbers = booking.roomIds.map((id) {
       String cleanedId = id.replaceAll('_', ' ').toUpperCase();
-      // Hapus kata 'WISMA' dan nama item agar tidak double
       cleanedId = cleanedId.replaceAll('WISMA', '').replaceAll(itemName.replaceAll('WISMA', '').trim(), '').trim();
       return cleanedId;
     }).where((s) => s.isNotEmpty).join(', ');
     
-    // 3. Gabungkan: Jika roomNumbers kosong (untuk aula/lab), tampilkan itemName saja
-    String displayTitle = roomNumbers.isEmpty 
-        ? itemName 
-        : "$itemName $roomNumbers";
+    String displayTitle = roomNumbers.isEmpty ? itemName : "$itemName $roomNumbers";
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -500,7 +494,6 @@ class _RiwayatApprovalPageState extends State<RiwayatApprovalPage> {
   );
 }
 
-// --- DIALOG TINJAU PEMESANAN ---
 class DialogTinjauPemesanan extends StatefulWidget {
   final BookingModel booking;
   const DialogTinjauPemesanan({super.key, required this.booking});
@@ -514,6 +507,9 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
   bool _isProcessing = false;
 
   Future<void> _handleManualCheckout() async {
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     bool confirm = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -533,18 +529,18 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
         final snapshot = await FirebaseFirestore.instance.collection('items').get();
         for (var roomId in widget.booking.roomIds) {
           for (var doc in snapshot.docs) {
-            List rooms = doc.data()['rooms'] ?? [];
+            List rooms = List.from(doc.data()['rooms'] ?? []);
             int idx = rooms.indexWhere((r) => r['id'] == roomId);
             if (idx != -1) {
               rooms[idx]['condition'] = 'kosong';
-              await FirebaseFirestore.instance.collection('items').doc(doc.id).update({'rooms': rooms});
+              await doc.reference.update({'rooms': rooms});
             }
           }
         }
         await FirebaseFirestore.instance.collection('bookings').doc(widget.booking.id).update({'isRead': false});
         if (mounted) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Berhasil Checkout. Kamar kini tersedia.")));
+          navigator.pop();
+          scaffoldMessenger.showSnackBar(const SnackBar(content: Text("Berhasil Checkout. Kamar kini tersedia.")));
         }
       } catch (e) {
         debugPrint("Error Checkout: $e");
@@ -552,6 +548,162 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
         if (mounted) setState(() => _isProcessing = false);
       }
     }
+  }
+
+  void _showRejectDialog() {
+    final TextEditingController reasonController = TextEditingController();
+    String? selectedNewRoomId; 
+    final navigator = Navigator.of(context); // Digunakan di dalam tombol Proses
+
+    final bool isWismaOrder = !widget.booking.itemName.toLowerCase().contains("kelas") && 
+                            !widget.booking.itemName.toLowerCase().contains("aula");
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setPopUpState) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text("Tolak & Alihkan Pesanan", 
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red)),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Alasan Penolakan:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: reasonController,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        hintText: "Contoh: Kamar sedang perbaikan", 
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        contentPadding: const EdgeInsets.all(12)
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      "Alihkan ke ${isWismaOrder ? 'Wisma' : 'Kelas'} Lain:", 
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)
+                    ),
+                    const Text("*Pilih tepat 1 kamar pengganti", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                    const SizedBox(height: 10),
+                    
+                    StreamBuilder<List<ItemModel>>(
+                      stream: db.getItems(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                        
+                        final filteredItems = snapshot.data!.where((item) {
+                          final bool isItemWisma = item.type == ItemType.wisma;
+                          return isWismaOrder ? isItemWisma : !isItemWisma;
+                        }).toList();
+
+                        if (filteredItems.isEmpty) return const Text("Tidak ada pilihan tersedia");
+
+                        return Column(
+                          children: filteredItems.map((item) {
+                            final availableRooms = item.rooms.where((r) => r.condition == RoomCondition.kosong).toList();
+                            if (availableRooms.isEmpty) return const SizedBox.shrink();
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Row(
+                                    children: [
+                                      Text(item.title.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey[600])),
+                                      const SizedBox(width: 8),
+                                      Expanded(child: Divider(color: Colors.grey[300])),
+                                    ],
+                                  ),
+                                ),
+                                Wrap(
+                                  spacing: 8,
+                                  children: availableRooms.map((room) {
+                                    final isSelected = selectedNewRoomId == room.id;
+                                    return ChoiceChip(
+                                      label: Text(room.name.replaceAll('_', ' ').toUpperCase(), style: TextStyle(fontSize: 10, color: isSelected ? Colors.white : Colors.black)),
+                                      selected: isSelected,
+                                      selectedColor: const Color(0xFF008996),
+                                      onSelected: (bool selected) {
+                                        setPopUpState(() => selectedNewRoomId = selected ? room.id : null);
+                                      },
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                onPressed: _isProcessing ? null : () async {
+                  if (selectedNewRoomId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pilih 1 kamar pengganti")));
+                    return;
+                  }
+                  
+                  setPopUpState(() => _isProcessing = true);
+                  try {
+                    // MENCARI NAMA ITEM BARU (newItemName)
+                    String newItemName = "";
+                    final allItems = await db.getItems().first;
+                    for (var item in allItems) {
+                      if (item.rooms.any((r) => r.id == selectedNewRoomId)) {
+                        newItemName = item.title;
+                        break;
+                      }
+                    }
+
+                    String alasan = reasonController.text.trim();
+                    if (alasan.isEmpty) alasan = "Dialihkan oleh Admin.";
+
+                    // PERBAIKAN ARGUMEN [Line 682 & 685]
+                    // Parameter 1: BookingModel (widget.booking)
+                    // Parameter 2: String (alasan)
+                    // Parameter 3: List<String> (kamar baru)
+                    // Parameter 4: String (nama wisma/kelas baru)
+                    await db.rejectBookingWithRedirect(
+                      widget.booking, 
+                      alasan,
+                      [selectedNewRoomId!], 
+                      newItemName,
+                    );
+
+                    if (mounted) {
+                      navigator.pop(); // Tutup dialog reject
+                      navigator.pop(); // Tutup dialog tinjau
+                    }
+                  } catch (e) {
+                    debugPrint("Gagal: $e");
+                  } finally {
+                    if (mounted) setPopUpState(() => _isProcessing = false);
+                  }
+                },
+                child: _isProcessing 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                  : const Text("Proses Pengalihan", style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        }
+      ),
+    );
   }
 
   Widget _rowInfo(String label, String value) => Padding(
@@ -589,75 +741,6 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
     );
   }
 
-  void _showRejectDialog() {
-    final TextEditingController reasonController = TextEditingController();
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setPopUpState) {
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text("Konfirmasi Penolakan", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 12),
-                TextField(
-                  controller: reasonController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: "Tulis alasan di sini...", 
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    contentPadding: const EdgeInsets.all(12)
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                onPressed: _isProcessing ? null : () async {
-                  if (!mounted) return;
-                  setPopUpState(() => _isProcessing = true);
-                  try {
-                    String alasan = reasonController.text.trim();
-                    if (alasan.isEmpty) alasan = "Tidak ada alasan spesifik.";
-                    await db.rejectBooking(widget.booking.id, "rejected", alasan, widget.booking.roomIds);
-                    await FirebaseFirestore.instance.collection('bookings').doc(widget.booking.id).update({'rejectReason': alasan, 'isRead': false});
-                    
-                    final snapshot = await FirebaseFirestore.instance.collection('items').get();
-                    for (var roomId in widget.booking.roomIds) {
-                      for (var doc in snapshot.docs) {
-                        List rooms = doc.data()['rooms'] ?? [];
-                        int idx = rooms.indexWhere((r) => r['id'] == roomId);
-                        if (idx != -1) {
-                          rooms[idx]['condition'] = 'kosong';
-                          await FirebaseFirestore.instance.collection('items').doc(doc.id).update({'rooms': rooms});
-                        }
-                      }
-                    }
-                    if (mounted) { 
-                       Navigator.pop(context); // Tutup dialog penolakan
-                       Navigator.pop(context); // Tutup dialog tinjau
-                    }
-                  } catch (e) { 
-                    debugPrint("Gagal: $e"); 
-                  } finally { 
-                    if (mounted) setPopUpState(() => _isProcessing = false); 
-                  }
-                },
-                child: _isProcessing ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text("Tolak", style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          );
-        }
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -682,7 +765,6 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
                 children: [
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Tinjau Pemesanan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, size: 20))]),
                   const Divider(height: 30),
-                  
                   if (widget.booking.status == BookingStatus.rejected) ...[
                     _sectionHeader("STATUS: DITOLAK"),
                     Container(
@@ -700,7 +782,6 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
                     ),
                     const Divider(height: 32),
                   ],
-
                   _rowInfo("Tipe", isWisma ? "Wisma (${kategoriTamu.toUpperCase()})" : "Ruangan/Kelas"),
                   _sectionHeader("DATA PEMESAN"),
                   _rowInfo("Nama", widget.booking.userName),
@@ -718,17 +799,17 @@ class _DialogTinjauPemesananState extends State<DialogTinjauPemesanan> {
                   _sectionHeader("DOKUMEN LAMPIRAN"),
                   _buildFilePreview(lampiran, isWisma && kategoriTamu == "eksternal" ? "Bukti Pembayaran" : "Surat Tugas"),
                   const SizedBox(height: 32),
-
                   if (widget.booking.status == BookingStatus.pending)
                     Row(
                       children: [
                         Expanded(child: OutlinedButton(onPressed: _showRejectDialog, style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text("Tolak", style: TextStyle(color: Colors.red)))),
                         const SizedBox(width: 12),
                         Expanded(child: ElevatedButton(onPressed: () async { 
+                          final navigator = Navigator.of(context);
                           if (!mounted) return;
                           await db.approveBooking(widget.booking.id); 
                           await FirebaseFirestore.instance.collection('bookings').doc(widget.booking.id).update({'isRead': false});
-                          if (mounted) Navigator.pop(context); 
+                          if (mounted) navigator.pop(); 
                         }, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008996), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text("Terima", style: TextStyle(color: Colors.white)))),
                       ],
                     )
@@ -790,7 +871,6 @@ class _DialogTinjauPengaduanState extends State<DialogTinjauPengaduan> {
               ],
             ),
             const Divider(height: 30),
-            
             FutureBuilder<DocumentSnapshot>(
               future: FirebaseFirestore.instance.collection('complaints').doc(widget.complaint.id).get(),
               builder: (context, snapshot) {
@@ -814,16 +894,13 @@ class _DialogTinjauPengaduanState extends State<DialogTinjauPengaduan> {
                 return const SizedBox.shrink();
               },
             ),
-
             const Text("Masalah:", style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
             Text(widget.complaint.description, style: const TextStyle(fontSize: 13)),
             const SizedBox(height: 32),
-            
             StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance.collection('complaints').doc(widget.complaint.id).snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return const SizedBox.shrink();
-                
                 String statusStr = snapshot.data!.get('status');
 
                 if (statusStr == 'waitingApproval') {
@@ -832,6 +909,7 @@ class _DialogTinjauPengaduanState extends State<DialogTinjauPengaduan> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: _isLoading ? null : () async {
+                            final navigator = Navigator.of(context);
                             if (!mounted) return;
                             setState(() => _isLoading = true);
                             try {
@@ -839,7 +917,7 @@ class _DialogTinjauPengaduanState extends State<DialogTinjauPengaduan> {
                                 'status': 'repairing',
                                 'rejectReason': 'Bukti kurang jelas atau perbaikan belum selesai'
                               });
-                              if (mounted) Navigator.pop(context);
+                              if (mounted) navigator.pop();
                             } finally {
                               if (mounted) setState(() => _isLoading = false);
                             }
@@ -855,11 +933,12 @@ class _DialogTinjauPengaduanState extends State<DialogTinjauPengaduan> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : () async {
+                            final navigator = Navigator.of(context);
                             if (!mounted) return;
                             setState(() => _isLoading = true);
                             try {
                               await db.resolveComplaint(widget.complaint.id, "Selesai", widget.complaint.roomId);
-                              if (mounted) Navigator.pop(context);
+                              if (mounted) navigator.pop();
                             } finally {
                               if (mounted) setState(() => _isLoading = false);
                             }

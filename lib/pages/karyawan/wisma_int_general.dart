@@ -334,6 +334,7 @@ class _FormWismaGeneralInternalState extends State<FormWismaGeneralInternal> {
             nip: nipController.text.trim(),
             femaleCount: int.tryParse(perempuanController.text) ?? 0,
             maleCount: int.tryParse(lakiController.text) ?? 0,
+            createdAt: DateTime.now(), 
           );
 
           final parent = allItems.firstWhere((item) => item.rooms.any((r) => r.id == room.id));

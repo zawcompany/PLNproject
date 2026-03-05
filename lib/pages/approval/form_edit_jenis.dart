@@ -57,13 +57,11 @@ class _FormEditJenisState extends State<FormEditJenis> {
     if (_formKey.currentState!.validate() && selectedItem != null) {
       setState(() => _isLoading = true);
       try {
-        // 1. Ambil data kamar lama
         List<Map<String, dynamic>> newRooms = [];
         for (var r in selectedItem!.rooms) {
           newRooms.add(r.toMap());
         }
 
-        // 2. Tambahkan kamar baru dari input
         for (var controller in roomNameControllers) {
           if (controller.text.isNotEmpty) {
             String roomId = "${DateTime.now().millisecondsSinceEpoch}_${controller.text.hashCode}";
@@ -76,7 +74,6 @@ class _FormEditJenisState extends State<FormEditJenis> {
           }
         }
 
-        // 3. Update Firestore
         await FirebaseFirestore.instance.collection('items').doc(selectedItem!.id).update({
           'title': nameController.text.trim(),
           'description': descController.text.trim(),

@@ -21,13 +21,14 @@ class _DashApprovalState extends State<DashApproval> {
   static const Color primaryTeal = Color(0xFF008996);
   static const Color blueBoxColor = Color(0xffbfe0e6);
 
-  // FUNGSI DIALOG UTAMA: Pilih Wisma atau Kelas dengan Style Baru
+  // Pilih Wisma atau Kelas dengan Style Baru
   void _showBookingDialog() {
     showDialog(
       context: context,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -37,8 +38,7 @@ class _DashApprovalState extends State<DashApproval> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40,
-                height: 4,
+                width: 40, height: 4,
                 decoration: BoxDecoration(
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(10),
@@ -54,8 +54,8 @@ class _DashApprovalState extends State<DashApproval> {
                 ),
               ),
               const SizedBox(height: 24),
+              
               _buildDialogOption(
-                icon: Icons.home_work_rounded,
                 label: "Kamar Wisma",
                 color: const Color(0xFFE0F2F1),
                 onTap: () {
@@ -63,9 +63,10 @@ class _DashApprovalState extends State<DashApproval> {
                   _showWismaTypeDialog(); 
                 },
               ),
+              
               const SizedBox(height: 12),
+              
               _buildDialogOption(
-                icon: Icons.school_rounded,
                 label: "Ruang Kelas",
                 color: const Color(0xFFE3F2FD),
                 onTap: () {
@@ -84,12 +85,22 @@ class _DashApprovalState extends State<DashApproval> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         child: Container(
+          width: MediaQuery.of(context).size.width * 0.9, 
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(height: 20),
               const Text(
                 "Kategori Tamu Wisma",
                 style: TextStyle(
@@ -98,9 +109,16 @@ class _DashApprovalState extends State<DashApproval> {
                   color: primaryTeal
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 8),
+              const Text(
+                "Tentukan jenis wisma sesuai kategori tamu",
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 28),
+              
+              // Tombol Siswa 
               _buildDialogOption(
-                icon: Icons.badge_rounded,
                 label: "Siswa Pembelajaran",
                 color: const Color(0xFFF3E5F5),
                 onTap: () {
@@ -108,9 +126,11 @@ class _DashApprovalState extends State<DashApproval> {
                   Navigator.pushNamed(context, '/wisma_int_general');
                 },
               ),
+
               const SizedBox(height: 12),
+
+              // Tombol Beyond KwH 
               _buildDialogOption(
-                icon: Icons.public_rounded,
                 label: "Beyond KwH",
                 color: const Color(0xFFFFF3E0),
                 onTap: () {
@@ -118,11 +138,8 @@ class _DashApprovalState extends State<DashApproval> {
                   Navigator.pushNamed(context, '/wisma_eks_general');
                 },
               ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Kembali", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-              )
+              
+              const SizedBox(height: 10), 
             ],
           ),
         ),
@@ -131,7 +148,6 @@ class _DashApprovalState extends State<DashApproval> {
   }
 
   Widget _buildDialogOption({
-    required IconData icon, 
     required String label, 
     required Color color,
     required VoidCallback onTap
@@ -140,7 +156,8 @@ class _DashApprovalState extends State<DashApproval> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        width: double.infinity, // Memastikan tombol memenuhi lebar dialog
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20), 
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(20),
@@ -148,26 +165,17 @@ class _DashApprovalState extends State<DashApproval> {
         ),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: primaryTeal, size: 22),
-            ),
-            const SizedBox(width: 14),
             Expanded(
               child: Text(
                 label,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
+                  fontSize: 15,
                   color: Colors.black87,
                 ),
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: primaryTeal),
+            const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: primaryTeal),
           ],
         ),
       ),
